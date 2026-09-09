@@ -30,6 +30,8 @@ struct CaptureView: View {
     @State private var typed = ""
     @State private var unknownBarcode: String?
     @State private var task: Task<Void, Never>?
+    @State private var operation = UUID()
+    @State private var finishingVoice = false
     @AppStorage("aiConsent") private var consent = false
     @State private var hasKey = Keychain.read() != nil
     private var aiReady: Bool { consent && hasKey }
@@ -73,7 +75,7 @@ struct CaptureView: View {
                                 ProgressView().tint(Theme.cyan).scaleEffect(1.3)
                                 Text(busyLabel).font(.system(size: 19, weight: .medium, design: .rounded))
                                 Text("Wird direkt in \(slot.title) erfasst.").font(.footnote).foregroundStyle(Theme.muted)
-                                Button("Abbrechen") { task?.cancel(); busy = false; camera.retryBarcode() }.font(.footnote).padding(.top, 10)
+                                Button("Abbrechen") { operation = UUID(); task?.cancel(); busy = false; camera.retryBarcode() }.font(.footnote).padding(.top, 10)
                             }.padding(26)
                         }
                     }
@@ -91,13 +93,13 @@ struct CaptureView: View {
             speech.onTimedFinish = { finishVoice() }
             startMode()
         }
-        .onChange(of: mode) { _, _ in task?.cancel(); speech.cancel(); camera.stop(); startMode() }
+        .onChange(of: mode) { _, _ in operation = UUID(); task?.cancel(); finishingVoice = false; speech.cancel(); camera.stop(); startMode() }
         .onChange(of: phase) { _, value in
             if value != .active { speech.cancel(); camera.stop() }
             else if !busy { startMode() }
         }
         .onDisappear {
-            task?.cancel(); speech.cancel(); camera.stop(); camera.onPhoto = nil; camera.onBarcode = nil; speech.onTimedFinish = nil
+            operation = UUID(); task?.cancel(); speech.cancel(); camera.stop(); camera.onPhoto = nil; camera.onBarcode = nil; speech.onTimedFinish = nil
         }
         .onChange(of: photo) { _, selected in
             guard let selected else { return }
@@ -166,7 +168,7 @@ struct CaptureView: View {
                 }
                 if !aiReady { connectButton }
                 else {
-                    PrimaryButton(title: speech.recording ? "Fertig & erfassen" : "Aufnahme starten", symbol: speech.recording ? "stop.fill" : "mic.fill", disabled: speech.preparing) {
+                    PrimaryButton(title: finishingVoice ? "Text abschliessen …" : speech.recording ? "Fertig & erfassen" : "Aufnahme starten", symbol: speech.recording ? "stop.fill" : "mic.fill", disabled: speech.preparing || finishingVoice) {
                         if speech.recording { finishVoice() }
                         else { task = Task { await speech.start() } }
                     }
@@ -206,7 +208,7 @@ struct CaptureView: View {
         if mode == .barcode { camera.start(.barcode) }
     }
     private func analysePhoto(_ data: Data) {
-        guard !busy else { return }
+        guard !busy, mode == .photo, phase == .active else { return }
         guard aiReady else { keySheet = true; return }
         runAI(text: "Erfasse die ganze sichtbare Mahlzeit als einen Eintrag.", image: data, source: .photo)
     }
@@ -216,9 +218,11 @@ struct CaptureView: View {
         runAI(text: text, source: .voice)
     }
     private func finishVoice() {
-        guard !busy else { return }
+        guard !busy, !finishingVoice else { return }
+        finishingVoice = true
         task = Task {
             let text = await speech.finish()
+            finishingVoice = false
             guard !Task.isCancelled else { return }
             if text.isEmpty { error = "Ich habe kein Essen verstanden. Versuche es nochmals oder tippe eine kurze Beschreibung." }
             else { analyseText(text) }
@@ -226,23 +230,26 @@ struct CaptureView: View {
     }
     private func runAI(text: String, image: Data? = nil, source: EntrySource) {
         busy = true; busyLabel = "Dein Meal wird erkannt …"; unknownBarcode = nil
+        let run = UUID(); operation = run
         let targetSlot = slot
         task = Task {
-            defer { busy = false }
+            defer { if operation == run { busy = false } }
             do {
                 let estimate = try await AIService.estimate(text: text, image: image)
                 try Task.checkCancellation()
+                guard operation == run else { return }
                 let entry = try estimate.entry(date: date, slot: targetSlot, source: source)
                 if store.add(entry) { dismiss() }
             } catch { if !Task.isCancelled { self.error = error.localizedDescription } }
         }
     }
     private func scan(_ code: String) {
-        guard !busy else { return }
+        guard !busy, mode == .barcode, phase == .active else { return }
         busy = true; busyLabel = "Produkt wird erkannt …"; unknownBarcode = code
+        let run = UUID(); operation = run
         let targetSlot = slot
         task = Task {
-            defer { busy = false }
+            defer { if operation == run { busy = false } }
             do {
                 if let saved = store.meals.first(where: { $0.barcode == code }) {
                     if store.add(saved.entry(date: date, slot: targetSlot)) { dismiss() }
@@ -250,6 +257,7 @@ struct CaptureView: View {
                 }
                 let product = try await BarcodeService.shared.product(for: code)
                 try Task.checkCancellation()
+                guard operation == run else { return }
                 let portion = try ProductResolver.resolve(product)
                 let entry = FoodEntry(name: product.name, nutrition: portion.nutrition, date: date, slot: targetSlot,
                     source: .barcode, portion: portion.label,

@@ -19,6 +19,7 @@ final class SpeechRecorder: ObservableObject {
 
     func start() async {
         guard !recording, !preparing else { return }
+        task?.cancel(); task = nil; request = nil
         preparing = true; error = nil; transcript = ""
         let run = UUID(); generation = run
         let permission = await withCheckedContinuation { continuation in SFSpeechRecognizer.requestAuthorization { continuation.resume(returning: $0) } }
@@ -57,9 +58,11 @@ final class SpeechRecorder: ObservableObject {
         } catch { preparing = false; self.error = "Die Aufnahme konnte nicht starten. Bitte versuche es erneut."; cancel() }
     }
     func finish() async -> String {
+        let run = generation
         stopAudio()
         // Give the recognizer a short opportunity to deliver the final words.
         try? await Task.sleep(for: .milliseconds(700))
+        guard generation == run, !Task.isCancelled else { return "" }
         let text = transcript.trimmingCharacters(in: .whitespacesAndNewlines)
         task?.cancel(); task = nil; request = nil
         return text

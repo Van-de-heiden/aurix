@@ -37,6 +37,10 @@ final class AurixCoreTests: XCTestCase {
         let product = ProductRecord(barcode: "12345678", name: "Joghurt", quantityText: "1 kg", quantity: 1000, serving: "150 g", per100: values)
         XCTAssertEqual(try ProductResolver.resolve(product).amount, 150)
     }
+    func testBarbecueSauceIsNotAProteinBar() throws {
+        let product = ProductRecord(barcode: "12345678", name: "Barbecue Sauce", quantityText: "200 g", quantity: 200, serving: "20 g", per100: values)
+        XCTAssertEqual(try ProductResolver.resolve(product).amount, 20)
+    }
     func testMeasurementConversion() {
         XCTAssertEqual(ProductResolver.measurement(in: "1 Becher (180 g)")?.amount, 180)
         XCTAssertEqual(ProductResolver.measurement(in: "1,5 l")?.amount, 1500)

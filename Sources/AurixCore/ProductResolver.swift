@@ -49,7 +49,7 @@ public enum ProductResolver {
         let serving = measurement(in: product.serving)
         let text = (product.categories + " " + product.name).lowercased()
         let multi = product.quantityText.range(of: #"\d+\s*[x×]\s*\d"#, options: .regularExpression) != nil
-        let single = ["sandwich", "wrap", "bar", "riegel", "yogurt", "yoghurt", "joghurt", "skyr", "drink", "beverage", "getränk", "ready-meal", "prepared-meal"].contains { text.contains($0) }
+        let single = text.range(of: #"\b(sandwich(?:es)?|wraps?|bars?|proteinriegel|riegel|yogurts?|yoghurts?|joghurts?|skyr|drinks?|proteindrink|beverages?|getränke?|ready-meals?|prepared-meals?)\b"#, options: .regularExpression) != nil
         let singleLimit: Double = (packageUnit == "ml" || text.contains("sandwich") || text.contains("ready-meal") || text.contains("prepared-meal")) ? 600 : 250
         let amount: Double; let unit: String; let label: String; let assumed: Bool
         if single, !multi, let package, package <= singleLimit {
