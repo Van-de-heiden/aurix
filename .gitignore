@@ -11,3 +11,4 @@ Secrets*
 *.mobileprovision
 *.xcresult
 build/
+build-ui/

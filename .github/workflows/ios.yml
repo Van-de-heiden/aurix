@@ -18,7 +18,7 @@ jobs:
       - name: Build native iPhone app
         run: xcodebuild -project Aurix.xcodeproj -scheme Aurix -destination 'generic/platform=iOS Simulator' -derivedDataPath build CODE_SIGNING_ALLOWED=NO build
       - name: UI smoke test and screenshots
-        run: xcodebuild -project Aurix.xcodeproj -scheme Aurix -destination 'platform=iOS Simulator,name=iPhone 16 Pro' -derivedDataPath build -resultBundlePath build/Aurix.xcresult CODE_SIGNING_ALLOWED=NO test
+        run: xcodebuild -project Aurix.xcodeproj -scheme Aurix -destination 'platform=iOS Simulator,name=iPhone 16 Pro' -derivedDataPath build-ui -resultBundlePath build/Aurix.xcresult ONLY_ACTIVE_ARCH=YES CODE_SIGNING_ALLOWED=NO test
       - name: Export screenshots
         if: always()
         run: |
