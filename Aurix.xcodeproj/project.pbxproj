@@ -1,0 +1,534 @@
+// !$*UTF8*$!
+{
+	"archiveVersion" = 1;
+	"classes" = {
+	};
+	"objectVersion" = 56;
+	"objects" = {
+		"2638F28086240E79571BEDB1" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "Aurix/App/AppStore.swift";
+			"sourceTree" = "<group>";
+		};
+		"3E0EB1BBC3066953F07835BA" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "2638F28086240E79571BEDB1";
+		};
+		"0C174699E1F3715FF4C8C8DC" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "Aurix/App/AurixApp.swift";
+			"sourceTree" = "<group>";
+		};
+		"77709C8A5A4130FEFA2A812A" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "0C174699E1F3715FF4C8C8DC";
+		};
+		"4EFAF150B0B4EC864EF4FFEF" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "Aurix/Design/Theme.swift";
+			"sourceTree" = "<group>";
+		};
+		"32AD0EEF364240FCD7BDD948" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "4EFAF150B0B4EC864EF4FFEF";
+		};
+		"5C6C3C8849C0F8D33865C5F6" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "Aurix/Features/CaptureView.swift";
+			"sourceTree" = "<group>";
+		};
+		"3DEBF70472922DAEB409E18B" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "5C6C3C8849C0F8D33865C5F6";
+		};
+		"5A624230763101D071540279" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "Aurix/Features/EntryEditor.swift";
+			"sourceTree" = "<group>";
+		};
+		"EC0D045DDA37B11354873E06" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "5A624230763101D071540279";
+		};
+		"598653F3FA810B815DFA4026" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "Aurix/Features/HomeView.swift";
+			"sourceTree" = "<group>";
+		};
+		"DB6E033E1D136E20330DCF4E" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "598653F3FA810B815DFA4026";
+		};
+		"9A369E1ABDE4A42B014607B8" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "Aurix/Features/MealsView.swift";
+			"sourceTree" = "<group>";
+		};
+		"812F596F8D282E1B467881F1" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "9A369E1ABDE4A42B014607B8";
+		};
+		"FCA83CF60AC11B25A4A2A8FC" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "Aurix/Features/OnboardingView.swift";
+			"sourceTree" = "<group>";
+		};
+		"AE983438ABCDC08634C1E976" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "FCA83CF60AC11B25A4A2A8FC";
+		};
+		"D1B0F38279A96154D23E78F8" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "Aurix/Features/SettingsView.swift";
+			"sourceTree" = "<group>";
+		};
+		"0BD42573D0540CC2D76B6CF6" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "D1B0F38279A96154D23E78F8";
+		};
+		"074DDE13BFDE1C7BD6C02A9D" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "Aurix/Services/AIService.swift";
+			"sourceTree" = "<group>";
+		};
+		"1B32681C70ED4740F85B6A3A" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "074DDE13BFDE1C7BD6C02A9D";
+		};
+		"5FE00A2920D4CAE602972359" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "Aurix/Services/BarcodeService.swift";
+			"sourceTree" = "<group>";
+		};
+		"7C0E2DC2FEE306D7B3F40977" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "5FE00A2920D4CAE602972359";
+		};
+		"EC64AB0AF37553A047A17621" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "Aurix/Services/CameraController.swift";
+			"sourceTree" = "<group>";
+		};
+		"338E9AA6B340701E13799930" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "EC64AB0AF37553A047A17621";
+		};
+		"C78AB9CF552B65C7B24A4FED" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "Aurix/Services/Keychain.swift";
+			"sourceTree" = "<group>";
+		};
+		"28068C9F1D4782D1428DD0DD" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "C78AB9CF552B65C7B24A4FED";
+		};
+		"D6FBF93FBD5B1A460C30363B" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "Aurix/Services/SpeechRecorder.swift";
+			"sourceTree" = "<group>";
+		};
+		"AA393D14D1CF05310F102547" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "D6FBF93FBD5B1A460C30363B";
+		};
+		"BA70ACB80D301C089962B086" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "folder.assetcatalog";
+			"path" = "Aurix/Resources/Assets.xcassets";
+			"sourceTree" = "<group>";
+		};
+		"BE77FE906FC80020314BF441" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "text.xml";
+			"path" = "Aurix/Resources/PrivacyInfo.xcprivacy";
+			"sourceTree" = "<group>";
+		};
+		"C6DB8A16B4365CCC3D7F3F2A" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "text.plist.xml";
+			"path" = "Aurix/Resources/Info.plist";
+			"sourceTree" = "<group>";
+		};
+		"4E783A9E10D2A8ABA38CD11C" = {
+			"isa" = "PBXFileReference";
+			"explicitFileType" = "wrapper.application";
+			"includeInIndex" = 0;
+			"path" = "Aurix.app";
+			"sourceTree" = "BUILT_PRODUCTS_DIR";
+		};
+		"9B7BED31F6F48AD5D908B2BC" = {
+			"isa" = "PBXFileReference";
+			"explicitFileType" = "wrapper.cfbundle";
+			"includeInIndex" = 0;
+			"path" = "AurixUITests.xctest";
+			"sourceTree" = "BUILT_PRODUCTS_DIR";
+		};
+		"FBDC4F23F93125BBEEAE800C" = {
+			"isa" = "PBXGroup";
+			"children" = (
+				"4E783A9E10D2A8ABA38CD11C",
+				"9B7BED31F6F48AD5D908B2BC",
+			);
+			"name" = "Products";
+			"sourceTree" = "<group>";
+		};
+		"C7B61DCCAB63B81BACDE4915" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "AurixUITests/AurixUITests.swift";
+			"sourceTree" = "<group>";
+		};
+		"870B3294C0CBD48AF6BBCC1B" = {
+			"isa" = "PBXGroup";
+			"children" = (
+				"2638F28086240E79571BEDB1",
+				"0C174699E1F3715FF4C8C8DC",
+				"4EFAF150B0B4EC864EF4FFEF",
+				"5C6C3C8849C0F8D33865C5F6",
+				"5A624230763101D071540279",
+				"598653F3FA810B815DFA4026",
+				"9A369E1ABDE4A42B014607B8",
+				"FCA83CF60AC11B25A4A2A8FC",
+				"D1B0F38279A96154D23E78F8",
+				"074DDE13BFDE1C7BD6C02A9D",
+				"5FE00A2920D4CAE602972359",
+				"EC64AB0AF37553A047A17621",
+				"C78AB9CF552B65C7B24A4FED",
+				"D6FBF93FBD5B1A460C30363B",
+				"BA70ACB80D301C089962B086",
+				"BE77FE906FC80020314BF441",
+				"C6DB8A16B4365CCC3D7F3F2A",
+				"C7B61DCCAB63B81BACDE4915",
+				"FBDC4F23F93125BBEEAE800C",
+			);
+			"sourceTree" = "<group>";
+		};
+		"B747EAD6A8D7189EE159E1E4" = {
+			"isa" = "XCLocalSwiftPackageReference";
+			"relativePath" = ".";
+		};
+		"0AF3C04A96725640A0666DDD" = {
+			"isa" = "XCSwiftPackageProductDependency";
+			"productName" = "AurixCore";
+		};
+		"E6E5511D0DFB6484AC21E80B" = {
+			"isa" = "PBXBuildFile";
+			"productRef" = "0AF3C04A96725640A0666DDD";
+		};
+		"E9B2E96ABC5F6856F2BE79CF" = {
+			"isa" = "XCBuildConfiguration";
+			"buildSettings" = {
+				"SWIFT_VERSION" = "5.0";
+				"IPHONEOS_DEPLOYMENT_TARGET" = "17.0";
+				"SDKROOT" = "iphoneos";
+				"TARGETED_DEVICE_FAMILY" = "1";
+				"SUPPORTED_PLATFORMS" = "iphoneos iphonesimulator";
+				"CODE_SIGN_STYLE" = "Automatic";
+				"CURRENT_PROJECT_VERSION" = "1";
+				"MARKETING_VERSION" = "1.0";
+				"CLANG_ENABLE_MODULES" = "YES";
+				"ENABLE_USER_SCRIPT_SANDBOXING" = "YES";
+				"PRODUCT_NAME" = "$(TARGET_NAME)";
+				"PRODUCT_BUNDLE_IDENTIFIER" = "ch.mauruspichler.aurix";
+				"GENERATE_INFOPLIST_FILE" = "NO";
+				"INFOPLIST_FILE" = "Aurix/Resources/Info.plist";
+				"ASSETCATALOG_COMPILER_APPICON_NAME" = "AppIcon";
+				"ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME" = "AccentColor";
+				"LD_RUNPATH_SEARCH_PATHS" = "$(inherited) @executable_path/Frameworks";
+				"SUPPORTS_MACCATALYST" = "NO";
+				"SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD" = "NO";
+				"SWIFT_EMIT_LOC_STRINGS" = "YES";
+				"SWIFT_OPTIMIZATION_LEVEL" = "-Onone";
+				"DEBUG_INFORMATION_FORMAT" = "dwarf";
+				"SWIFT_ACTIVE_COMPILATION_CONDITIONS" = "DEBUG $(inherited)";
+			};
+			"name" = "Debug";
+		};
+		"5A8C91857F674E16E2724F47" = {
+			"isa" = "XCBuildConfiguration";
+			"buildSettings" = {
+				"SWIFT_VERSION" = "5.0";
+				"IPHONEOS_DEPLOYMENT_TARGET" = "17.0";
+				"SDKROOT" = "iphoneos";
+				"TARGETED_DEVICE_FAMILY" = "1";
+				"SUPPORTED_PLATFORMS" = "iphoneos iphonesimulator";
+				"CODE_SIGN_STYLE" = "Automatic";
+				"CURRENT_PROJECT_VERSION" = "1";
+				"MARKETING_VERSION" = "1.0";
+				"CLANG_ENABLE_MODULES" = "YES";
+				"ENABLE_USER_SCRIPT_SANDBOXING" = "YES";
+				"PRODUCT_NAME" = "$(TARGET_NAME)";
+				"PRODUCT_BUNDLE_IDENTIFIER" = "ch.mauruspichler.aurix";
+				"GENERATE_INFOPLIST_FILE" = "NO";
+				"INFOPLIST_FILE" = "Aurix/Resources/Info.plist";
+				"ASSETCATALOG_COMPILER_APPICON_NAME" = "AppIcon";
+				"ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME" = "AccentColor";
+				"LD_RUNPATH_SEARCH_PATHS" = "$(inherited) @executable_path/Frameworks";
+				"SUPPORTS_MACCATALYST" = "NO";
+				"SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD" = "NO";
+				"SWIFT_EMIT_LOC_STRINGS" = "YES";
+				"SWIFT_OPTIMIZATION_LEVEL" = "-O";
+				"DEBUG_INFORMATION_FORMAT" = "dwarf-with-dsym";
+			};
+			"name" = "Release";
+		};
+		"F37922C48DA5978D02C9E50E" = {
+			"isa" = "XCConfigurationList";
+			"buildConfigurations" = (
+				"E9B2E96ABC5F6856F2BE79CF",
+				"5A8C91857F674E16E2724F47",
+			);
+			"defaultConfigurationIsVisible" = 0;
+			"defaultConfigurationName" = "Release";
+		};
+		"949D493B91791558E87BC5D7" = {
+			"isa" = "PBXSourcesBuildPhase";
+			"buildActionMask" = 2147483647;
+			"files" = (
+				"3E0EB1BBC3066953F07835BA",
+				"77709C8A5A4130FEFA2A812A",
+				"32AD0EEF364240FCD7BDD948",
+				"3DEBF70472922DAEB409E18B",
+				"EC0D045DDA37B11354873E06",
+				"DB6E033E1D136E20330DCF4E",
+				"812F596F8D282E1B467881F1",
+				"AE983438ABCDC08634C1E976",
+				"0BD42573D0540CC2D76B6CF6",
+				"1B32681C70ED4740F85B6A3A",
+				"7C0E2DC2FEE306D7B3F40977",
+				"338E9AA6B340701E13799930",
+				"28068C9F1D4782D1428DD0DD",
+				"AA393D14D1CF05310F102547",
+			);
+			"runOnlyForDeploymentPostprocessing" = 0;
+		};
+		"BD92572B49AC16A86614498D" = {
+			"isa" = "PBXFrameworksBuildPhase";
+			"buildActionMask" = 2147483647;
+			"files" = (
+				"E6E5511D0DFB6484AC21E80B",
+			);
+			"runOnlyForDeploymentPostprocessing" = 0;
+		};
+		"C1FFFB61196F8C993C0041FD" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "BA70ACB80D301C089962B086";
+		};
+		"A39309C4376B4D66A5739C05" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "BE77FE906FC80020314BF441";
+		};
+		"8ECC8B5D05B79F879ACDF1A2" = {
+			"isa" = "PBXResourcesBuildPhase";
+			"buildActionMask" = 2147483647;
+			"files" = (
+				"C1FFFB61196F8C993C0041FD",
+				"A39309C4376B4D66A5739C05",
+			);
+			"runOnlyForDeploymentPostprocessing" = 0;
+		};
+		"F75109BEB4DD8800DA6B45F8" = {
+			"isa" = "PBXNativeTarget";
+			"buildConfigurationList" = "F37922C48DA5978D02C9E50E";
+			"buildPhases" = (
+				"949D493B91791558E87BC5D7",
+				"BD92572B49AC16A86614498D",
+				"8ECC8B5D05B79F879ACDF1A2",
+			);
+			"buildRules" = (
+			);
+			"dependencies" = (
+			);
+			"name" = "Aurix";
+			"packageProductDependencies" = (
+				"0AF3C04A96725640A0666DDD",
+			);
+			"productName" = "Aurix";
+			"productReference" = "4E783A9E10D2A8ABA38CD11C";
+			"productType" = "com.apple.product-type.application";
+		};
+		"D799BAE6088A90139B415FCC" = {
+			"isa" = "PBXContainerItemProxy";
+			"containerPortal" = "98F54143AB4E86B28C3AFEE0";
+			"proxyType" = 1;
+			"remoteGlobalIDString" = "F75109BEB4DD8800DA6B45F8";
+			"remoteInfo" = "Aurix";
+		};
+		"BAE932EF166B50AB877FDC6F" = {
+			"isa" = "PBXTargetDependency";
+			"target" = "F75109BEB4DD8800DA6B45F8";
+			"targetProxy" = "D799BAE6088A90139B415FCC";
+		};
+		"94C1D7A82E2F92E70C5BA5D8" = {
+			"isa" = "XCBuildConfiguration";
+			"buildSettings" = {
+				"SWIFT_VERSION" = "5.0";
+				"IPHONEOS_DEPLOYMENT_TARGET" = "17.0";
+				"SDKROOT" = "iphoneos";
+				"TARGETED_DEVICE_FAMILY" = "1";
+				"SUPPORTED_PLATFORMS" = "iphoneos iphonesimulator";
+				"CODE_SIGN_STYLE" = "Automatic";
+				"CURRENT_PROJECT_VERSION" = "1";
+				"MARKETING_VERSION" = "1.0";
+				"CLANG_ENABLE_MODULES" = "YES";
+				"ENABLE_USER_SCRIPT_SANDBOXING" = "YES";
+				"PRODUCT_NAME" = "$(TARGET_NAME)";
+				"PRODUCT_BUNDLE_IDENTIFIER" = "ch.mauruspichler.aurix.uitests";
+				"GENERATE_INFOPLIST_FILE" = "YES";
+				"TEST_TARGET_NAME" = "Aurix";
+				"SWIFT_OPTIMIZATION_LEVEL" = "-Onone";
+				"DEBUG_INFORMATION_FORMAT" = "dwarf";
+				"SWIFT_ACTIVE_COMPILATION_CONDITIONS" = "DEBUG $(inherited)";
+			};
+			"name" = "Debug";
+		};
+		"9609A256A79253DD705A918E" = {
+			"isa" = "XCBuildConfiguration";
+			"buildSettings" = {
+				"SWIFT_VERSION" = "5.0";
+				"IPHONEOS_DEPLOYMENT_TARGET" = "17.0";
+				"SDKROOT" = "iphoneos";
+				"TARGETED_DEVICE_FAMILY" = "1";
+				"SUPPORTED_PLATFORMS" = "iphoneos iphonesimulator";
+				"CODE_SIGN_STYLE" = "Automatic";
+				"CURRENT_PROJECT_VERSION" = "1";
+				"MARKETING_VERSION" = "1.0";
+				"CLANG_ENABLE_MODULES" = "YES";
+				"ENABLE_USER_SCRIPT_SANDBOXING" = "YES";
+				"PRODUCT_NAME" = "$(TARGET_NAME)";
+				"PRODUCT_BUNDLE_IDENTIFIER" = "ch.mauruspichler.aurix.uitests";
+				"GENERATE_INFOPLIST_FILE" = "YES";
+				"TEST_TARGET_NAME" = "Aurix";
+				"SWIFT_OPTIMIZATION_LEVEL" = "-O";
+				"DEBUG_INFORMATION_FORMAT" = "dwarf-with-dsym";
+			};
+			"name" = "Release";
+		};
+		"2C89FC06BA9452D155609FB8" = {
+			"isa" = "XCConfigurationList";
+			"buildConfigurations" = (
+				"94C1D7A82E2F92E70C5BA5D8",
+				"9609A256A79253DD705A918E",
+			);
+			"defaultConfigurationIsVisible" = 0;
+			"defaultConfigurationName" = "Release";
+		};
+		"441BE0495D5DF14C1C120247" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "C7B61DCCAB63B81BACDE4915";
+		};
+		"F9ACDEB529017EFC18F5E60A" = {
+			"isa" = "PBXSourcesBuildPhase";
+			"buildActionMask" = 2147483647;
+			"files" = (
+				"441BE0495D5DF14C1C120247",
+			);
+			"runOnlyForDeploymentPostprocessing" = 0;
+		};
+		"39F831DAFE5A2F37503C83B2" = {
+			"isa" = "PBXFrameworksBuildPhase";
+			"buildActionMask" = 2147483647;
+			"files" = (
+			);
+			"runOnlyForDeploymentPostprocessing" = 0;
+		};
+		"794AAC98ACE6EB716B86C3A5" = {
+			"isa" = "PBXNativeTarget";
+			"buildConfigurationList" = "2C89FC06BA9452D155609FB8";
+			"buildPhases" = (
+				"F9ACDEB529017EFC18F5E60A",
+				"39F831DAFE5A2F37503C83B2",
+			);
+			"buildRules" = (
+			);
+			"dependencies" = (
+				"BAE932EF166B50AB877FDC6F",
+			);
+			"name" = "AurixUITests";
+			"productName" = "AurixUITests";
+			"productReference" = "9B7BED31F6F48AD5D908B2BC";
+			"productType" = "com.apple.product-type.bundle.ui-testing";
+		};
+		"89E1FD6268CC0F221A2BE178" = {
+			"isa" = "XCBuildConfiguration";
+			"buildSettings" = {
+				"CLANG_ENABLE_MODULES" = "YES";
+				"SWIFT_VERSION" = "5.0";
+				"SWIFT_OPTIMIZATION_LEVEL" = "-Onone";
+				"DEBUG_INFORMATION_FORMAT" = "dwarf";
+				"SWIFT_ACTIVE_COMPILATION_CONDITIONS" = "DEBUG $(inherited)";
+			};
+			"name" = "Debug";
+		};
+		"E6DE6C99132752C914FEF632" = {
+			"isa" = "XCBuildConfiguration";
+			"buildSettings" = {
+				"CLANG_ENABLE_MODULES" = "YES";
+				"SWIFT_VERSION" = "5.0";
+				"SWIFT_OPTIMIZATION_LEVEL" = "-O";
+				"DEBUG_INFORMATION_FORMAT" = "dwarf-with-dsym";
+			};
+			"name" = "Release";
+		};
+		"862894B703A6DEDF96A9DD6C" = {
+			"isa" = "XCConfigurationList";
+			"buildConfigurations" = (
+				"89E1FD6268CC0F221A2BE178",
+				"E6DE6C99132752C914FEF632",
+			);
+			"defaultConfigurationIsVisible" = 0;
+			"defaultConfigurationName" = "Release";
+		};
+		"98F54143AB4E86B28C3AFEE0" = {
+			"isa" = "PBXProject";
+			"attributes" = {
+				"BuildIndependentTargetsInParallel" = "YES";
+				"LastUpgradeCheck" = "1600";
+				"TargetAttributes" = {
+					"F75109BEB4DD8800DA6B45F8" = {
+						"CreatedOnToolsVersion" = "16.0";
+					};
+					"794AAC98ACE6EB716B86C3A5" = {
+						"CreatedOnToolsVersion" = "16.0";
+						"TestTargetID" = "F75109BEB4DD8800DA6B45F8";
+					};
+				};
+			};
+			"buildConfigurationList" = "862894B703A6DEDF96A9DD6C";
+			"compatibilityVersion" = "Xcode 14.0";
+			"developmentRegion" = "de";
+			"hasScannedForEncodings" = 0;
+			"knownRegions" = (
+				"de",
+				"en",
+				"Base",
+			);
+			"mainGroup" = "870B3294C0CBD48AF6BBCC1B";
+			"packageReferences" = (
+				"B747EAD6A8D7189EE159E1E4",
+			);
+			"productRefGroup" = "FBDC4F23F93125BBEEAE800C";
+			"projectDirPath" = "";
+			"projectRoot" = "";
+			"targets" = (
+				"F75109BEB4DD8800DA6B45F8",
+				"794AAC98ACE6EB716B86C3A5",
+			);
+		};
+	};
+	"rootObject" = "98F54143AB4E86B28C3AFEE0";
+}

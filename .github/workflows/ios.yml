@@ -1,0 +1,36 @@
+name: iOS build and verification
+on:
+  push:
+    branches: [main, 'codex/**']
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: macos-15
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_16.4.app/Contents/Developer
+      - name: Core behaviour tests
+        run: swift test
+      - name: Build native iPhone app
+        run: xcodebuild -project Aurix.xcodeproj -scheme Aurix -destination 'generic/platform=iOS Simulator' -derivedDataPath build CODE_SIGNING_ALLOWED=NO build
+      - name: UI smoke test and screenshots
+        run: xcodebuild -project Aurix.xcodeproj -scheme Aurix -destination 'platform=iOS Simulator,name=iPhone 16 Pro' -derivedDataPath build -resultBundlePath build/Aurix.xcresult CODE_SIGNING_ALLOWED=NO test
+      - name: Export screenshots
+        if: always()
+        run: |
+          mkdir -p build/screenshots
+          if [ -d build/Aurix.xcresult ]; then
+            xcrun xcresulttool export attachments --path build/Aurix.xcresult --output-path build/screenshots
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: aurix-verification
+          path: |
+            build/screenshots
+            build/Aurix.xcresult
+          retention-days: 5
