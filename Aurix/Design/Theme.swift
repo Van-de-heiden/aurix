@@ -15,9 +15,19 @@ enum Theme {
 struct Brand: View {
     var large = false
     var body: some View {
-        HStack(spacing: 10) {
-            Image("AppMark").resizable().scaledToFit().frame(width: large ? 48 : 34, height: large ? 48 : 34).clipShape(RoundedRectangle(cornerRadius: 10))
-            Text("AURIX").font(.system(size: large ? 26 : 17, weight: .semibold, design: .rounded)).tracking(large ? 6 : 4).foregroundStyle(Theme.ivory)
+        Group {
+            if large {
+                VStack(spacing: 3) {
+                    Image("AppMark").resizable().scaledToFit().frame(width: 158, height: 148)
+                    Text("AURIX").font(.system(size: 34, weight: .light)).tracking(11).padding(.leading, 11)
+                    Text("FUEL A BETTER YOU").font(.system(size: 9, weight: .light)).tracking(3.8).padding(.leading, 3.8).padding(.top, 7)
+                }.foregroundStyle(Theme.ivory)
+            } else {
+                HStack(spacing: 8) {
+                    Image("AppMark").resizable().scaledToFit().frame(width: 40, height: 36)
+                    Text("AURIX").font(.system(size: 17, weight: .light)).tracking(5).foregroundStyle(Theme.ivory)
+                }
+            }
         }.accessibilityElement(children: .ignore).accessibilityLabel("AURIX")
     }
 }

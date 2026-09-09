@@ -27,12 +27,10 @@ struct OnboardingView: View {
         .task { guard !reduceMotion else { return }; withAnimation(.easeInOut(duration: 12).repeatForever(autoreverses: true)) { drift = true } }
     }
     private var welcome: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Brand(large: true).padding(.top, 22)
-            Text("DEIN NÄCHSTER GIPFEL.").font(.system(size: 10, weight: .semibold)).tracking(3).foregroundStyle(Theme.cyan).padding(.top, 38)
-            Text("Fuel your\nnext chapter.").font(.system(size: 49, weight: .medium, design: .rounded)).tracking(-2).lineSpacing(-2).padding(.top, 14)
+        VStack(spacing: 0) {
+            Brand(large: true).padding(.top, 30).frame(maxWidth: .infinity)
             Spacer()
-            Text("Dein Essen. Deine Energie.\nDein Fortschritt.").font(.system(size: 19, weight: .medium)).lineSpacing(4).padding(.bottom, 26)
+            Text("Food fuels\nmore than just today.").font(.system(size: 21, weight: .regular)).multilineTextAlignment(.center).lineSpacing(4).padding(.bottom, 30)
             PrimaryButton(title: "Los geht’s") { advance() }.accessibilityIdentifier("onboarding.start")
             Text("Nur du. Dein Ziel. AURIX.").font(.system(size: 12)).foregroundStyle(Theme.muted).frame(maxWidth: .infinity).padding(.top, 16)
         }.padding(.horizontal, 28).padding(.bottom, 20)

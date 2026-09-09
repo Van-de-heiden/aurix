@@ -2,7 +2,7 @@
 
 Die App wird nur für ihren Besitzer gebaut. Vier gleichwertige Meter, schnelle Erfassung, wenige Oberflächenelemente. Keine Maskottchen. Bergwelt, Weite und warmes Horizontlicht bilden den Markenraum. Morgenessen / Mittagessen / Abendessen / Snacks sind sichtbar, die Zuordnung ist per Uhrzeit vorausgewählt und manuell änderbar.
 
-Die beiden Assets wurden mit dem eingebauten Imagegen erstellt und für den iOS-Asset-Katalog lediglich in Format und Abmessungen optimiert:
+Das Bergmotiv wurde mit dem eingebauten Imagegen erstellt. Das finale Logo wurde auf ausdrücklichen Nutzerwunsch aus seiner hochgeladenen AURIX-Referenz mit Imagegen freigestellt und originalgetreu nachgebildet: cyanblaues A mit gerundetem Gipfel und geschwungenem Einschnitt. Die App verwendet diese verbindliche Referenzform. Für den Asset-Katalog wurden Format, Abmessungen und beim App-Icon der notwendige deckende Hintergrund angepasst:
 
 - `Aurix/Resources/Assets.xcassets/Summit.imageset/summit.jpg`
 - `Aurix/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png`
@@ -14,7 +14,7 @@ Photorealistic cinematic portrait 1024×1536; vast dark alpine mountain summit a
 
 ## Icon-Briefing
 
-Square opaque midnight background; bold minimal A monogram evoking an alpine summit and ascending trail through negative space. Ice cyan with small warm ivory trail; broad simple shapes, small-size recognition. No wordmark, frame, mascot, photography or 3D effects. System supplies icon rounding.
+Exact source: the top-left A emblem in the user's AURIX brand board, repeated on the first phone. Preserve rounded summit, continuous sloping right leg, detached curved lower-left segment, and smooth swooping negative-space incision. Pale ice-cyan top to vivid sky-blue bottom gradient. Extract symbol only onto transparent background. No added ivory trail, conventional crossbar, words, landscape, frame, or shadow. SwiftUI renders the spaced light AURIX wordmark separately. The iOS icon composites the same mark on midnight; iOS supplies rounding.
 
 ## Verhalten
 
