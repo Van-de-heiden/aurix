@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import AurixCore
 
 struct OnboardingView: View {
@@ -6,25 +7,22 @@ struct OnboardingView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var profile = UserProfile()
     @State private var step = 0
-    @State private var drift = false
     @FocusState private var nameFocused: Bool
     private let lastStep = 9
 
     var body: some View {
-        GeometryReader { geometry in
-            ZStack {
-                Theme.background.ignoresSafeArea()
-                Image("Summit").resizable().scaledToFill()
-                    .frame(width: geometry.size.width, height: geometry.size.height).clipped()
-                    .scaleEffect(drift && !reduceMotion ? 1.035 : 1)
-                    .opacity(step == 0 ? 1 : 0.27).ignoresSafeArea()
-                    .animation(.easeInOut(duration: 0.5), value: step)
-                LinearGradient(colors: [.black.opacity(0.12), .clear, Theme.background.opacity(step == 0 ? 0.6 : 0.97)], startPoint: .top, endPoint: .bottom).ignoresSafeArea()
-                if step == 0 { welcome } else { questionnaire }
+        ZStack {
+            Theme.background.ignoresSafeArea()
+            if step == 0 {
+                WelcomeBackdrop()
+                welcome
+            } else {
+                LinearGradient(colors: [Theme.cyan.opacity(0.055), .clear], startPoint: .topLeading, endPoint: .center)
+                    .ignoresSafeArea().allowsHitTesting(false)
+                questionnaire
             }
         }
         .aurixScreen()
-        .task { guard !reduceMotion else { return }; withAnimation(.easeInOut(duration: 12).repeatForever(autoreverses: true)) { drift = true } }
     }
     private var welcome: some View {
         VStack(spacing: 0) {
@@ -38,7 +36,7 @@ struct OnboardingView: View {
     private var questionnaire: some View {
         VStack(spacing: 20) {
             HStack {
-                Button { withAnimation(reduceMotion ? nil : .snappy) { step -= 1 } } label: { Image(systemName: "arrow.left").frame(width: 44, height: 44) }.accessibilityLabel("Zurück")
+                Button { nameFocused = false; withAnimation(stepAnimation) { step -= 1 } } label: { Image(systemName: "arrow.left").frame(width: 44, height: 44) }.accessibilityLabel("Zurück")
                 Spacer(); Text("\(step) / \(lastStep)").font(.system(size: 12, weight: .medium)).monospacedDigit().foregroundStyle(Theme.muted)
             }
             ProgressView(value: Double(step), total: Double(lastStep)).tint(Theme.cyan)
@@ -48,9 +46,10 @@ struct OnboardingView: View {
                     Text(title).font(.system(size: 34, weight: .medium, design: .rounded)).tracking(-0.8).fixedSize(horizontal: false, vertical: true)
                     content
                 }.frame(maxWidth: .infinity, alignment: .leading).padding(.top, 14).padding(.bottom, 20)
-                    .id(step).transition(.opacity.combined(with: .offset(x: 18)))
+                    .id(step).transition(.opacity)
             }.scrollDismissesKeyboard(.interactively)
             PrimaryButton(title: step == lastStep ? "Mein nächstes Kapitel" : "Weiter", disabled: !canAdvance) { advance() }
+                .accessibilityIdentifier("onboarding.next")
         }.padding(.horizontal, 26).padding(.bottom, 18)
     }
     private var eyebrow: String { step == lastStep ? "DEIN AUSGANGSPUNKT" : "DEIN WEG BEGINNT HIER" }
@@ -83,7 +82,7 @@ struct OnboardingView: View {
         case 4:
             wheel(value: $profile.height, values: Array(120...220).map(Double.init), unit: "cm")
         case 5:
-            wheel(value: $profile.weight, values: (400...2000).map { Double($0) / 10 }, unit: "kg")
+            WeightSelection(value: $profile.weight).accessibilityIdentifier("onboarding.weight")
         case 6:
             choice("Männlich", detail: "Mifflin–St Jeor, männliche Formel", icon: "figure.stand", selected: profile.maleFormula) { profile.maleFormula = true }
             choice("Weiblich", detail: "Mifflin–St Jeor, weibliche Formel", icon: "figure.stand", selected: !profile.maleFormula) { profile.maleFormula = false }
@@ -94,7 +93,7 @@ struct OnboardingView: View {
             choice("Regelmässig aktiv", detail: "3–5 Trainings und Bewegung im Alltag", icon: "dumbbell", selected: profile.activity == 1.55) { profile.activity = 1.55 }
             choice("Sehr aktiv", detail: "Viel Bewegung und intensives Training", icon: "figure.run", selected: profile.activity == 1.725) { profile.activity = 1.725 }
         case 8:
-            wheel(value: $profile.targetWeight, values: (400...2000).map { Double($0) / 10 }, unit: "kg")
+            WeightSelection(value: $profile.targetWeight).accessibilityIdentifier("onboarding.targetWeight")
             Text(profile.direction == .maintain ? "Dein Wohlfühlgewicht als Orientierung." : "Ein Ziel ohne unnötigen Zeitdruck. Du bestimmst das Tempo.").font(.footnote).foregroundStyle(Theme.muted)
             if !canAdvance { Text(profile.direction == .gain ? "Wähle ein Ziel über deinem aktuellen Gewicht." : "Wähle ein Ziel unter deinem aktuellen Gewicht.").font(.footnote).foregroundStyle(Theme.carbs) }
         default:
@@ -123,11 +122,11 @@ struct OnboardingView: View {
     private func wheel(value: Binding<Double>, values: [Double], unit: String) -> some View {
         VStack(spacing: 14) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text(value.wrappedValue, format: .number.precision(.fractionLength(unit == "kg" ? 1 : 0))).font(.system(size: 62, weight: .light, design: .rounded)).monospacedDigit()
+                Text(value.wrappedValue, format: .number.precision(.fractionLength(0))).font(.system(size: 62, weight: .light, design: .rounded)).monospacedDigit()
                 Text(unit).foregroundStyle(Theme.cyan).font(.title3)
             }.frame(maxWidth: .infinity)
             Picker(unit, selection: value) {
-                ForEach(values, id: \.self) { number in Text(number.formatted(.number.precision(.fractionLength(unit == "kg" ? 1 : 0))) + " " + unit).tag(number) }
+                ForEach(values, id: \.self) { number in Text(number.formatted(.number.precision(.fractionLength(0))) + " " + unit).tag(number) }
             }.pickerStyle(.wheel).frame(height: 190).clipped()
         }.padding(.vertical, 18).background(Theme.card.opacity(0.9), in: RoundedRectangle(cornerRadius: 26))
     }
@@ -143,11 +142,105 @@ struct OnboardingView: View {
         if step == 8 { return profile.direction == .maintain || (profile.direction == .gain ? profile.targetWeight > profile.weight : profile.targetWeight < profile.weight) }
         return true
     }
+    private var stepAnimation: Animation? { reduceMotion ? nil : .easeOut(duration: 0.18) }
     private func advance() {
         nameFocused = false
         if step == 7 { profile.targetWeight = min(200, max(40, profile.weight + (profile.direction == .gain ? 5 : profile.direction == .lose ? -5 : 0))) }
         if step == 8 { profile.goals = GoalCalculator.suggested(for: profile) }
         if step == lastStep { profile.name = profile.name.trimmingCharacters(in: .whitespaces); store.saveProfile(profile) }
-        else { withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.3)) { step += 1 } }
+        else { withAnimation(stepAnimation) { step += 1 } }
+    }
+}
+
+private struct WelcomeBackdrop: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var revealed = false
+
+    var body: some View {
+        GeometryReader { geometry in
+            Image("Summit").resizable().scaledToFill()
+                .frame(width: geometry.size.width, height: geometry.size.height).clipped()
+                .scaleEffect(revealed && !reduceMotion ? 1.015 : 1)
+                .overlay {
+                    LinearGradient(colors: [.black.opacity(0.12), .clear, Theme.background.opacity(0.6)], startPoint: .top, endPoint: .bottom)
+                }
+        }
+        .ignoresSafeArea().allowsHitTesting(false).accessibilityHidden(true)
+        // A short, isolated entrance: no ongoing full-screen animation behind pickers.
+        .onAppear { withAnimation(reduceMotion ? nil : .easeOut(duration: 1.2)) { revealed = true } }
+    }
+}
+
+struct WeightSelection: View {
+    @Binding var value: Double
+
+    var body: some View {
+        VStack(spacing: 14) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(value, format: .number.precision(.fractionLength(1)))
+                    .font(.system(size: 62, weight: .light, design: .rounded)).monospacedDigit()
+                    .minimumScaleFactor(0.7).lineLimit(1)
+                Text("kg").foregroundStyle(Theme.cyan).font(.title3)
+            }.frame(maxWidth: .infinity)
+            KilogramWheel(value: $value).frame(height: 190)
+        }.padding(.vertical, 18).background(Theme.card, in: RoundedRectangle(cornerRadius: 26))
+    }
+}
+
+/// UIKit creates only the visible wheel rows, rather than 1,601 SwiftUI views.
+private struct KilogramWheel: UIViewRepresentable {
+    @Binding var value: Double
+
+    func makeCoordinator() -> Coordinator { Coordinator(value: $value) }
+    func makeUIView(context: Context) -> UIPickerView {
+        let picker = UIPickerView()
+        picker.dataSource = context.coordinator
+        picker.delegate = context.coordinator
+        picker.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        context.coordinator.synchronize(picker, value: value)
+        return picker
+    }
+    func updateUIView(_ picker: UIPickerView, context: Context) {
+        context.coordinator.value = $value
+        context.coordinator.synchronize(picker, value: value)
+    }
+
+    final class Coordinator: NSObject, UIPickerViewDataSource, UIPickerViewDelegate {
+        var value: Binding<Double>
+        private var whole = 80
+        init(value: Binding<Double>) { self.value = value }
+
+        func numberOfComponents(in pickerView: UIPickerView) -> Int { 2 }
+        func pickerView(_ pickerView: UIPickerView, numberOfRowsInComponent component: Int) -> Int {
+            component == 0 ? 161 : (whole == 200 ? 1 : 2)
+        }
+        func pickerView(_ pickerView: UIPickerView, titleForRow row: Int, forComponent component: Int) -> String? {
+            component == 0 ? String(row + 40) : (row == 0 ? ".0" : ".5")
+        }
+        func pickerView(_ pickerView: UIPickerView, widthForComponent component: Int) -> CGFloat {
+            pickerView.bounds.width * 0.42
+        }
+        func pickerView(_ pickerView: UIPickerView, rowHeightForComponent component: Int) -> CGFloat { 44 }
+        func pickerView(_ pickerView: UIPickerView, didSelectRow row: Int, inComponent component: Int) {
+            let half = max(0, pickerView.selectedRow(inComponent: 1))
+            if component == 0 {
+                whole = row + 40
+                pickerView.reloadComponent(1)
+                pickerView.selectRow(whole == 200 ? 0 : half, inComponent: 1, animated: false)
+            }
+            value.wrappedValue = Double(whole) + (whole == 200 ? 0 : Double(max(0, pickerView.selectedRow(inComponent: 1))) * 0.5)
+        }
+        func synchronize(_ picker: UIPickerView, value: Double) {
+            let rounded = min(200, max(40, (value * 2).rounded() / 2))
+            let newWhole = Int(rounded)
+            if whole != newWhole {
+                whole = newWhole
+                picker.reloadComponent(1)
+            }
+            let selections = [whole - 40, Int((rounded - Double(whole)) * 2)]
+            for component in 0...1 where picker.selectedRow(inComponent: component) != selections[component] {
+                picker.selectRow(selections[component], inComponent: component, animated: false)
+            }
+        }
     }
 }

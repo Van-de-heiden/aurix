@@ -72,4 +72,4 @@ Das fertige Xcode-Projekt ist eingecheckt. Nach Änderungen an der Dateistruktur
 
 ## Design
 
-Midnight, warme Elfenbeintöne und dezentes Cyan. Die Landschaft prägt Start und Onboarding; im Alltag bestimmen Ziele und Mahlzeiten die Oberfläche. Bewegung respektiert „Bewegung reduzieren“. Eigene generierte Markenassets sind direkt in den Asset-Katalog eingebunden. Die Herkunft und Gestaltungsbriefings stehen in `docs/design.md`.
+Midnight, warme Elfenbeintöne und dezentes Cyan. Die Landschaft prägt den Start; die Einführung nutzt danach einen ruhigen Verlauf, kurze Übergänge und native Gewichtsrollen für ganze Kilos plus `.0` / `.5`. Im Alltag bestimmen Ziele und Mahlzeiten die Oberfläche. Die drei Hauptbereiche sind über Apples native Tableiste erreichbar. Bewegung respektiert „Bewegung reduzieren“. Eigene generierte Markenassets sind direkt in den Asset-Katalog eingebunden. Die Herkunft und Gestaltungsbriefings stehen in `docs/design.md`.

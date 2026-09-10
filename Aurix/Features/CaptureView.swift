@@ -18,6 +18,7 @@ struct CaptureView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let date: Date
     @State var slot: MealSlot
+    var onClose: (() -> Void)? = nil
     @State private var mode = CaptureMode.photo
     @StateObject private var camera = CameraController()
     @StateObject private var speech = SpeechRecorder()
@@ -61,12 +62,18 @@ struct CaptureView: View {
                     switch mode {
                     case .photo, .barcode: cameraContent
                     case .voice: voiceContent
-                    case .manual: ManualCaptureForm(date: date, slot: slot, barcode: unknownBarcode) { dismiss() }
+                    case .manual: ManualCaptureForm(date: date, slot: slot, barcode: unknownBarcode) { close() }
                     }
                 }.frame(maxWidth: .infinity, maxHeight: .infinity)
             }.padding(.top, 8).aurixScreen()
                 .navigationTitle("Essen erfassen").navigationBarTitleDisplayMode(.inline)
-                .toolbar { ToolbarItem(placement: .cancellationAction) { Button { dismiss() } label: { Image(systemName: "xmark").frame(width: 32, height: 32) }.accessibilityLabel("Schliessen") } }
+                .toolbar {
+                    if onClose == nil {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button { close() } label: { Image(systemName: "xmark").frame(width: 32, height: 32) }.accessibilityLabel("Schliessen")
+                        }
+                    }
+                }
                 .overlay {
                     if busy {
                         ZStack {
@@ -113,6 +120,9 @@ struct CaptureView: View {
                 } catch { if !Task.isCancelled { self.error = error.localizedDescription }; photo = nil }
             }
         }
+    }
+    private func close() {
+        if let onClose { onClose() } else { dismiss() }
     }
     private var cameraContent: some View {
         VStack(spacing: 18) {
@@ -239,7 +249,7 @@ struct CaptureView: View {
                 try Task.checkCancellation()
                 guard operation == run else { return }
                 let entry = try estimate.entry(date: date, slot: targetSlot, source: source)
-                if store.add(entry) { dismiss() }
+                if store.add(entry) { close() }
             } catch { if !Task.isCancelled { self.error = error.localizedDescription } }
         }
     }
@@ -252,7 +262,7 @@ struct CaptureView: View {
             defer { if operation == run { busy = false } }
             do {
                 if let saved = store.meals.first(where: { $0.barcode == code }) {
-                    if store.add(saved.entry(date: date, slot: targetSlot)) { dismiss() }
+                    if store.add(saved.entry(date: date, slot: targetSlot)) { close() }
                     return
                 }
                 let product = try await BarcodeService.shared.product(for: code)
@@ -263,7 +273,7 @@ struct CaptureView: View {
                     source: .barcode, portion: portion.label,
                     note: portion.assumed ? "Keine Portionsgrösse hinterlegt. Automatisch mit 100 \(portion.unit) erfasst; Menge bei Bedarf ändern." : "Nährwerte: Open Food Facts.",
                     barcode: code, estimated: portion.assumed)
-                if store.add(entry) { dismiss() }
+                if store.add(entry) { close() }
             } catch { if !Task.isCancelled { self.error = error.localizedDescription } }
         }
     }

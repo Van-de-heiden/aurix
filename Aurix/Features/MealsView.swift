@@ -6,6 +6,7 @@ struct MealsView: View {
     @Environment(\.dismiss) private var dismiss
     var date: Date
     var slot: MealSlot
+    var onEntryAdded: (() -> Void)? = nil
     @State private var query = ""
     @State private var editing: FoodEntry?
     @State private var selectedMeal: SavedMeal?
@@ -22,7 +23,7 @@ struct MealsView: View {
                 Section("Meine Meals") {
                     if store.meals.isEmpty { Text("Speichere deine häufigsten Mahlzeiten. Danach reicht ein Tippen.").font(.subheadline).foregroundStyle(Theme.muted) }
                     ForEach(store.meals.filter { matches($0.name) }) { meal in
-                        Button { if store.add(meal.entry(date: date, slot: slot)) { dismiss() } } label: { row(meal.name, meal.nutrition, meal.portion) }
+                        Button { if store.add(meal.entry(date: date, slot: slot)) { finishAdding() } } label: { row(meal.name, meal.nutrition, meal.portion) }
                             .contextMenu {
                                 Button("Meal bearbeiten", systemImage: "pencil") { selectedMeal = meal }
                                 Button("Meal löschen", systemImage: "trash", role: .destructive) { store.deleteMeal(meal) }
@@ -37,17 +38,25 @@ struct MealsView: View {
                     ForEach(recent) { old in
                         Button {
                             var entry = old; entry.id = UUID(); entry.date = date; entry.slot = slot
-                            if store.add(entry) { dismiss() }
+                            if store.add(entry) { finishAdding() }
                         } label: { row(old.name, old.nutrition, old.portion) }
                     }
                     if recent.isEmpty { Text("Hier erscheinen deine letzten Mahlzeiten.").font(.subheadline).foregroundStyle(Theme.muted) }
                 }
             }.listStyle(.insetGrouped).scrollContentBackground(.hidden).aurixScreen()
                 .searchable(text: $query, prompt: "Deine Meals durchsuchen")
-                .navigationTitle("Meine Meals").toolbar { ToolbarItem(placement: .confirmationAction) { Button("Fertig") { dismiss() } } }
+                .navigationTitle("Meine Meals")
+                .toolbar {
+                    if onEntryAdded == nil {
+                        ToolbarItem(placement: .confirmationAction) { Button("Fertig") { dismiss() } }
+                    }
+                }
                 .sheet(item: $editing) { EntryEditor(entry: $0, isNew: true) }
                 .sheet(item: $selectedMeal) { SavedMealEditor(meal: $0) }
         }
+    }
+    private func finishAdding() {
+        if let onEntryAdded { onEntryAdded() } else { dismiss() }
     }
     private func matches(_ name: String) -> Bool { query.isEmpty || name.localizedStandardContains(query) }
     private func row(_ name: String, _ nutrition: Nutrition, _ portion: String) -> some View {

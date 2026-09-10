@@ -2,25 +2,67 @@ import SwiftUI
 import AurixCore
 
 private enum HomeSheet: Identifiable {
-    case capture(MealSlot, Date), edit(FoodEntry), settings, library, calendar
+    case capture(MealSlot, Date), edit(FoodEntry), settings, calendar
     var id: String {
         switch self { case .capture: return "capture"; case .edit(let entry): return entry.id.uuidString
-        case .settings: return "settings"; case .library: return "library"; case .calendar: return "calendar" }
+        case .settings: return "settings"; case .calendar: return "calendar" }
     }
 }
 
 struct HomeView: View {
+    private enum Tab: Hashable { case today, capture, meals }
     @EnvironmentObject private var store: AppStore
     @Environment(\.scenePhase) private var phase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var date = Date()
     @State private var sheet: HomeSheet?
+    @State private var selectedTab = Tab.today
     @State private var lastToday = Calendar.current.startOfDay(for: Date())
     private var profile: UserProfile { store.profile ?? UserProfile() }
     private var currentEntries: [FoodEntry] { store.entries(on: date) }
     private var isToday: Bool { Calendar.current.isDateInToday(date) }
 
     var body: some View {
+        TabView(selection: $selectedTab) {
+            dashboard
+                .tabItem { Label("Heute", systemImage: "square.grid.2x2") }
+                .tag(Tab.today)
+            Group {
+                // A capture session only exists while this tab is visible. Leaving it
+                // stops camera/audio and releases drafts and temporary image data.
+                if selectedTab == .capture {
+                    CaptureView(date: entryDate, slot: .suggested(), onClose: { selectedTab = .today })
+                } else {
+                    Color.clear
+                }
+            }
+            .tabItem { Label("Erfassen", systemImage: "plus.circle") }
+            .tag(Tab.capture)
+            MealsView(date: entryDate, slot: .suggested(), onEntryAdded: { selectedTab = .today })
+                .tabItem { Label("Meine Meals", systemImage: "square.stack") }
+                .tag(Tab.meals)
+        }
+        .sheet(item: $sheet) { item in
+            switch item {
+            case .capture(let slot, let day): CaptureView(date: day, slot: slot)
+            case .edit(let entry): EntryEditor(entry: entry)
+            case .settings: SettingsView()
+            case .calendar:
+                NavigationStack {
+                    DatePicker("Tag wählen", selection: $date, in: ...Date(), displayedComponents: .date).datePickerStyle(.graphical).padding()
+                        .navigationTitle("Dein Tagebuch").navigationBarTitleDisplayMode(.inline)
+                        .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Fertig") { sheet = nil } } }
+                }.presentationDetents([.medium])
+            }
+        }
+        .onChange(of: phase) { _, new in
+            guard new == .active else { return }
+            let today = Calendar.current.startOfDay(for: Date())
+            if Calendar.current.isDate(date, inSameDayAs: lastToday) { date = Date() }
+            lastToday = today
+        }
+    }
+    private var dashboard: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 HStack {
@@ -66,7 +108,7 @@ struct HomeView: View {
         }
         .aurixScreen().scrollIndicators(.hidden)
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            VStack(spacing: 8) {
+            Group {
                 if let toast = store.toast {
                     HStack {
                         Image(systemName: "checkmark.circle.fill").foregroundStyle(Theme.cyan)
@@ -75,43 +117,12 @@ struct HomeView: View {
                         if store.undoEntry != nil { Button("Rückgängig") { store.undoLastAdd() }.font(.caption.bold()) }
                     }.padding(16).background(Theme.card, in: RoundedRectangle(cornerRadius: 18)).padding(.horizontal, 22).transition(.move(edge: .bottom).combined(with: .opacity))
                 }
-                dock
-            }.background(Theme.background.opacity(0.98)).animation(reduceMotion ? nil : .snappy, value: store.toast)
-        }
-        .sheet(item: $sheet) { item in
-            switch item {
-            case .capture(let slot, let day): CaptureView(date: day, slot: slot)
-            case .edit(let entry): EntryEditor(entry: entry)
-            case .settings: SettingsView()
-            case .library: MealsView(date: entryDate, slot: .suggested())
-            case .calendar:
-                NavigationStack {
-                    DatePicker("Tag wählen", selection: $date, in: ...Date(), displayedComponents: .date).datePickerStyle(.graphical).padding()
-                        .navigationTitle("Dein Tagebuch").navigationBarTitleDisplayMode(.inline)
-                        .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Fertig") { sheet = nil } } }
-                }.presentationDetents([.medium])
-            }
-        }
-        .onChange(of: phase) { _, new in
-            guard new == .active else { return }
-            let today = Calendar.current.startOfDay(for: Date())
-            if Calendar.current.isDate(date, inSameDayAs: lastToday) { date = Date() }
-            lastToday = today
+            }.animation(reduceMotion ? nil : .snappy, value: store.toast)
         }
     }
     private var entryDate: Date {
         let calendar = Calendar.current, now = Date()
         return calendar.date(bySettingHour: calendar.component(.hour, from: now), minute: calendar.component(.minute, from: now), second: 0, of: date) ?? date
-    }
-    private var dock: some View {
-        HStack(spacing: 24) {
-            Button { date = Date() } label: { VStack(spacing: 4) { Image(systemName: "square.grid.2x2.fill").font(.system(size: 19)); Text("Heute").font(.system(size: 10)) }.frame(maxWidth: .infinity) }.accessibilityLabel("Heute anzeigen")
-            Button { sheet = .capture(.suggested(), entryDate) } label: {
-                Image(systemName: "plus").font(.system(size: 25, weight: .medium)).frame(width: 64, height: 54)
-                    .foregroundStyle(Theme.background).background(Theme.cyan, in: RoundedRectangle(cornerRadius: 19))
-            }.buttonStyle(PressStyle()).accessibilityLabel("Essen erfassen").accessibilityIdentifier("capture.open")
-            Button { sheet = .library } label: { VStack(spacing: 4) { Image(systemName: "square.stack").font(.system(size: 20)); Text("Meine Meals").font(.system(size: 10)) }.frame(maxWidth: .infinity) }.foregroundStyle(Theme.muted)
-        }.padding(.horizontal, 38).padding(.top, 12).padding(.bottom, 8)
     }
     private var dayPicker: some View {
         HStack {
