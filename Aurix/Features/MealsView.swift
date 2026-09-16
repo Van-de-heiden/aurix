@@ -89,7 +89,7 @@ struct SavedMealEditor: View {
                 .navigationTitle("Eigenes Meal").navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) { Button("Abbrechen") { dismiss() } }
-                    ToolbarItem(placement: .confirmationAction) { Button("Speichern") { store.saveMeal(meal); dismiss() }.disabled(meal.name.trimmingCharacters(in: .whitespaces).isEmpty || !meal.nutrition.isValid) }
+                    ToolbarItem(placement: .confirmationAction) { Button("Speichern") { if store.saveMeal(meal) { dismiss() } }.disabled(meal.name.trimmingCharacters(in: .whitespaces).isEmpty || !meal.nutrition.isValid) }
                 }
         }
     }

@@ -17,7 +17,8 @@ actor BarcodeService {
     func product(for code: String) async throws -> ProductRecord {
         guard (8...14).contains(code.count), code.allSatisfy(\.isNumber) else { throw CoreError.incompleteProduct }
         load()
-        if let hit = cache[code] { return hit.product }
+        if let hit = cache[code], hit.storedAt > Date().addingTimeInterval(-30 * 86400) { return hit.product }
+        cache[code] = nil
         let fields = "product_name,product_name_de,brands,categories_tags,quantity,product_quantity,product_quantity_unit,serving_size,nutriments"
         var request = URLRequest(url: URL(string: "https://world.openfoodfacts.org/api/v2/product/\(code).json?fields=\(fields)")!)
         request.setValue("AURIX-Personal/1.0 (iOS; https://github.com/Van-de-heiden/aurix)", forHTTPHeaderField: "User-Agent")

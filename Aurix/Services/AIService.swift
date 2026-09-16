@@ -17,13 +17,28 @@ enum AIService {
         let components = Calendar.current.dateComponents([.year, .month, .day], from: Date())
         return "\(components.year ?? 0)-\(components.month ?? 0)-\(components.day ?? 0)"
     }
+    private static var monthKey: String {
+        let parts = Calendar.current.dateComponents([.year, .month], from: Date())
+        return "\(parts.year ?? 0)-\(parts.month ?? 0)"
+    }
+    static var estimatedMonthUSD: Double {
+        UserDefaults.standard.string(forKey: "aiCostMonth") == monthKey ? UserDefaults.standard.double(forKey: "aiCostUSD") : 0
+    }
+    static var lastResponseSeconds: Double { UserDefaults.standard.double(forKey: "aiLastResponseSeconds") }
+    private static func recordUsage(_ data: Data, elapsed: TimeInterval) {
+        guard let usage = AIUsage.receipt(from: data) else { return }
+        let defaults = UserDefaults.standard, total = estimatedMonthUSD + usage.estimatedUSD
+        defaults.set(monthKey, forKey: "aiCostMonth")
+        defaults.set(total, forKey: "aiCostUSD")
+        defaults.set(elapsed, forKey: "aiLastResponseSeconds")
+    }
     static func estimate(text: String, image: Data? = nil) async throws -> MealEstimate {
         guard UserDefaults.standard.bool(forKey: "aiConsent") else { throw ServiceError.consent }
         guard let key = Keychain.read() else { throw ServiceError.keyMissing }
         let configured = UserDefaults.standard.integer(forKey: "aiDailyLimit")
         let limit = configured > 0 ? min(50, max(5, configured)) : 20
         guard requestsToday < limit else { throw ServiceError.limit }
-        let body = try AIContract.body(text: text, imageData: image)
+        let body = try await Task.detached(priority: .userInitiated) { try AIContract.body(text: text, imageData: image) }.value
         guard body.count <= 4_000_000 else { throw ServiceError.imageTooLarge }
         try Task.checkCancellation()
         // Reserve before the request, including failures. No automatic retries or duplicate submissions.
@@ -34,6 +49,7 @@ enum AIService {
         request.httpMethod = "POST"; request.httpBody = body
         request.setValue("Bearer " + key, forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        let started = Date()
         let (data, response) = try await session.data(for: request)
         try Task.checkCancellation()
         guard let http = response as? HTTPURLResponse else { throw ServiceError.unavailable }
@@ -44,6 +60,7 @@ enum AIService {
         default: throw ServiceError.unavailable
         }
         guard data.count <= 500_000 else { throw CoreError.invalidNutrition }
+        recordUsage(data, elapsed: Date().timeIntervalSince(started))
         return try AIContract.parse(data)
     }
     enum ServiceError: LocalizedError {

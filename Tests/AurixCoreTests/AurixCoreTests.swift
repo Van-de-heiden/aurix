@@ -77,13 +77,16 @@ final class AurixCoreTests: XCTestCase {
         let data = try JSONEncoder().encode(archive)
         XCTAssertEqual(try JSONDecoder().decode(Archive.self, from: data).validated().entries, [entry])
         XCTAssertThrowsError(try Archive(entries: [entry, entry]).validated())
-        var future = archive; future.schemaVersion = 2
+        var future = archive; future.schemaVersion = 3
         XCTAssertThrowsError(try future.validated())
     }
     func testAIContractHasStrictSchemaAndNoProfile() throws {
         let data = try AIContract.body(text: "zwei Eier", imageData: Data([1, 2, 3]))
         let root = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
         XCTAssertEqual(root["store"] as? Bool, false)
+        XCTAssertEqual(root["model"] as? String, "gpt-5.6-terra")
+        XCTAssertEqual(root["max_output_tokens"] as? Int, 900)
+        XCTAssertEqual((root["reasoning"] as? [String: String])?["effort"], "none")
         XCTAssertNil(root["profile"])
         let text = try XCTUnwrap(root["text"] as? [String: Any])
         let format = try XCTUnwrap(text["format"] as? [String: Any])

@@ -1,4 +1,6 @@
 import SwiftUI
+import ImageIO
+import UniformTypeIdentifiers
 @preconcurrency import AVFoundation
 
 final class CameraController: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate, AVCaptureMetadataOutputObjectsDelegate {
@@ -82,19 +84,30 @@ final class CameraController: NSObject, ObservableObject, AVCapturePhotoCaptureD
     }
     func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: Error?) {
         queue.async { self.takingPhoto = false }
-        guard error == nil, let original = photo.fileDataRepresentation(), let image = UIImage(data: original), let data = Self.compressed(image) else {
+        guard error == nil, let original = photo.fileDataRepresentation() else {
             fail("Das Foto konnte nicht verarbeitet werden. Versuche es erneut."); return
         }
-        DispatchQueue.main.async { self.onPhoto?(data) }
+        queue.async {
+            guard self.active else { return }
+            guard let data = Self.compressed(original) else { self.fail("Das Foto konnte nicht verarbeitet werden."); return }
+            DispatchQueue.main.async { self.onPhoto?(data) }
+        }
     }
-    static func compressed(_ image: UIImage) -> Data? {
-        let maxSide: CGFloat = 1280
-        let factor = min(1, maxSide / max(image.size.width, image.size.height))
-        let size = CGSize(width: image.size.width * factor, height: image.size.height * factor)
-        let format = UIGraphicsImageRendererFormat(); format.scale = 1; format.opaque = true
-        // Redrawing fixes orientation and omits original EXIF/GPS metadata.
-        let resized = UIGraphicsImageRenderer(size: size, format: format).image { _ in image.draw(in: CGRect(origin: .zero, size: size)) }
-        return resized.jpegData(compressionQuality: 0.7)
+    static func compressed(_ data: Data) -> Data? {
+        guard data.count <= 30_000_000,
+              let source = CGImageSourceCreateWithData(data as CFData, [kCGImageSourceShouldCache: false] as CFDictionary),
+              let image = CGImageSourceCreateThumbnailAtIndex(source, 0, [
+                kCGImageSourceCreateThumbnailFromImageAlways: true,
+                kCGImageSourceCreateThumbnailWithTransform: true,
+                kCGImageSourceThumbnailMaxPixelSize: 1280,
+                kCGImageSourceShouldCacheImmediately: true
+              ] as CFDictionary) else { return nil }
+        let output = NSMutableData()
+        guard let destination = CGImageDestinationCreateWithData(output, UTType.jpeg.identifier as CFString, 1, nil) else { return nil }
+        // A fresh JPEG from the oriented pixels carries no source EXIF/GPS metadata.
+        CGImageDestinationAddImage(destination, image, [kCGImageDestinationLossyCompressionQuality: 0.7] as CFDictionary)
+        guard CGImageDestinationFinalize(destination) else { return nil }
+        return output as Data
     }
 }
 

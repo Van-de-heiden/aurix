@@ -3,7 +3,7 @@ import AurixCore
 
 @MainActor
 final class AppStore: ObservableObject {
-    @Published private(set) var archive = Archive()
+    @Published private(set) var archive = Archive() { didSet { rebuildIndex() } }
     @Published var error: String?
     @Published var toast: String?
     @Published private(set) var undoEntry: FoodEntry?
@@ -11,13 +11,23 @@ final class AppStore: ObservableObject {
     private let file: URL
     private let backup: URL
     private var toastTask: Task<Void, Never>?
+    private var entriesByDay: [Date: [FoodEntry]] = [:]
+    private var totalsByDay: [Date: Nutrition] = [:]
+    private var indexTimeZone = TimeZone.current.identifier
 
     var profile: UserProfile? { archive.profile }
     var entries: [FoodEntry] { archive.entries }
     var meals: [SavedMeal] { archive.meals }
+    var measurements: [BodyMeasurement] { archive.measurements }
 
     init() {
-        let root = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("Aurix", isDirectory: true)
+        var root = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("Aurix", isDirectory: true)
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-uitest-measurements") {
+            root = root.appendingPathComponent("UITestMeasurements", isDirectory: true)
+            if ProcessInfo.processInfo.arguments.contains("-uitest-reset") { try? FileManager.default.removeItem(at: root) }
+        }
+        #endif
         file = root.appendingPathComponent("diary.json")
         backup = root.appendingPathComponent("diary.backup.json")
         do {
@@ -41,13 +51,66 @@ final class AppStore: ObservableObject {
                 FoodEntry(name: "Protein-Drink", nutrition: Nutrition(calories: 230, protein: 30, carbs: 18, fat: 4), slot: .snack, source: .barcode)
             ])
         }
+        if ProcessInfo.processInfo.arguments.contains("-uitest-measurements"), archive.profile == nil {
+            var profile = UserProfile(); profile.name = "Maurus"; profile.weight = 82
+            let calendar = Calendar.current, today = calendar.startOfDay(for: Date())
+            var samples = (1...42).map { day in
+                BodyMeasurement(metric: .weight, value: 82 + Double(day) * 0.025 + sin(Double(day) * 1.5) * 0.35,
+                    date: calendar.date(byAdding: .day, value: -day, to: today)!)
+            }
+            samples += [7, 14, 21, 28, 35].map { day in
+                BodyMeasurement(metric: .waist, value: 85 + Double(day) * 0.05,
+                    date: calendar.date(byAdding: .day, value: -day, to: today)!)
+            }
+            _ = commit(Archive(profile: profile, measurements: samples))
+        }
         #endif
+        rebuildIndex()
     }
 
     func entries(on date: Date) -> [FoodEntry] {
-        archive.entries.filter { Calendar.current.isDate($0.date, inSameDayAs: date) }.sorted { $0.date < $1.date }
+        ensureIndex()
+        return entriesByDay[Calendar.current.startOfDay(for: date)] ?? []
     }
-    func totals(on date: Date) -> Nutrition { entries(on: date).reduce(.zero) { $0 + $1.nutrition } }
+    func totals(on date: Date) -> Nutrition {
+        ensureIndex()
+        return totalsByDay[Calendar.current.startOfDay(for: date)] ?? .zero
+    }
+    var trackingStreak: Int {
+        ensureIndex()
+        let calendar = Calendar.current
+        var day = calendar.startOfDay(for: Date())
+        if entriesByDay[day] == nil { day = calendar.date(byAdding: .day, value: -1, to: day)! }
+        var count = 0
+        while entriesByDay[day] != nil {
+            count += 1; day = calendar.date(byAdding: .day, value: -1, to: day)!
+        }
+        return count
+    }
+    private func ensureIndex() { if indexTimeZone != TimeZone.current.identifier { rebuildIndex() } }
+    private func rebuildIndex() {
+        indexTimeZone = TimeZone.current.identifier
+        entriesByDay = Dictionary(grouping: archive.entries, by: { Calendar.current.startOfDay(for: $0.date) })
+            .mapValues { $0.sorted { $0.date < $1.date } }
+        totalsByDay = entriesByDay.mapValues { $0.reduce(.zero) { $0 + $1.nutrition } }
+    }
+    func latestMeasurement(_ metric: BodyMetric) -> BodyMeasurement? {
+        measurements.filter { $0.metric == metric && $0.date <= Date() }.max { $0.date < $1.date }
+    }
+    @discardableResult func saveMeasurement(_ measurement: BodyMeasurement) -> Bool {
+        guard measurement.isValid, measurement.date <= Date() else { error = "Bitte prüfe Datum und Messwert."; return false }
+        var next = archive
+        next.measurements = BodyProgress.upserting(measurement, into: measurements)
+        guard commit(next) else { return false }
+        notify("\(measurement.metric.title) gespeichert")
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        return true
+    }
+    @discardableResult func deleteMeasurement(_ measurement: BodyMeasurement) -> Bool {
+        var next = archive; next.measurements.removeAll { $0.id == measurement.id }
+        guard commit(next) else { return false }
+        notify("Messwert gelöscht"); return true
+    }
     func saveProfile(_ profile: UserProfile) {
         guard profile.isValid else { error = "Bitte prüfe deine Angaben und Ziele."; return }
         var next = archive; next.profile = profile; _ = commit(next)
@@ -75,12 +138,13 @@ final class AppStore: ObservableObject {
         var next = archive; next.entries.removeAll { $0.id == entry.id }
         if commit(next) { undoEntry = nil; toast = nil; toastTask?.cancel() }
     }
-    func saveMeal(_ meal: SavedMeal) {
+    @discardableResult func saveMeal(_ meal: SavedMeal) -> Bool {
         var next = archive
         if let index = next.meals.firstIndex(where: { $0.id == meal.id || (meal.barcode != nil && $0.barcode == meal.barcode) }) {
             next.meals[index] = meal
         } else { next.meals.append(meal) }
-        if commit(next) { notify("In deinen Meals gespeichert") }
+        guard commit(next) else { return false }
+        notify("In deinen Meals gespeichert"); return true
     }
     func deleteMeal(_ meal: SavedMeal) {
         var next = archive; next.meals.removeAll { $0.id == meal.id }; _ = commit(next)
@@ -102,9 +166,11 @@ final class AppStore: ObservableObject {
         let knownEntries = Set(next.entries.map(\.id)), knownMeals = Set(next.meals.map(\.id))
         next.entries += incoming.entries.filter { !knownEntries.contains($0.id) }
         next.meals += incoming.meals.filter { !knownMeals.contains($0.id) }
+        next.measurements = BodyProgress.merging(incoming.measurements, into: next.measurements)
         if next.profile == nil { next.profile = incoming.profile }
         _ = try next.validated()
-        if commit(next) { notify("Sicherung importiert · Duplikate übersprungen") }
+        guard commit(next) else { throw CocoaError(.fileWriteUnknown) }
+        notify("Sicherung importiert · Duplikate übersprungen")
     }
     var storageDescription: String {
         let size = ((try? FileManager.default.attributesOfItem(atPath: file.path)[.size] as? NSNumber)?.int64Value ?? 0) +

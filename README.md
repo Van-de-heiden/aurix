@@ -21,6 +21,9 @@ Kamera, Barcode und Mikrofon auf dem echten iPhone testen. Der Simulator unterst
 - Atmosphärischer Berg-Start, eigens erstelltes AURIX-Icon.
 - Onboarding mit einer Frage pro Bildschirm, Auswahlkarten, Zahlenrädern, sanften Übergängen und Rücknavigation.
 - Vier gleich grosse Anzeigen für Kalorien, Protein, Carbs und Fette.
+- Morgengewicht mit zwei Rollen (ganze kg + `.0` / `.5`), Bauchumfang mit Dezimaleingabe. Schnellzugriff direkt auf Heute; täglich bzw. nach sieben Tagen hervorgehoben.
+- **Verlauf:** native Swift-Charts-Diagramme für Gewicht und Bauchumfang, 4 Wochen / 3 Monate / gesamter Verlauf. Tagespunkte, 7-Tage-Mittel aus vorhandenen Messungen, Veränderung im Zeitraum und bearbeitbare Historie. Keine erfundenen Werte für ausgelassene Tage.
+- Messwerte rückwirkend erfassen, bearbeiten und löschen. Ein Wert je Messart und Kalendertag; erneutes Speichern ersetzt denselben Tag. Bestehende Kalorienziele bleiben unverändert.
 - Tagebuch mit Morgenessen, Mittagessen, Abendessen und Snacks. Rückwirkende Einträge und Kalenderauswahl.
 - **Foto:** verkleinern, Metadaten entfernen, OpenAI-Schätzung direkt speichern.
 - **Barcode:** Open Food Facts abfragen, automatisch eine ganze Einzelpackung bzw. deklarierte Portion erfassen. Mehrfachpackungen werden separat berücksichtigt. Fehlt eine Portionsgrösse, explizit gekennzeichnete 100-g/ml-Standardmenge.
@@ -33,11 +36,15 @@ Kamera, Barcode und Mikrofon auf dem echten iPhone testen. Der Simulator unterst
 
 ## Speicherung und Kosten
 
+Version 1.1 migriert alte Archive (Schema 1) automatisch auf Schema 2; Messwerte sind Teil des Exports. Beim Import bleiben lokale Werte für denselben Tag erhalten.
+
 Das Tagebuch ist eine kompakte, versionierte JSON-Datei im privaten Application-Support-Verzeichnis. Änderungen werden atomar gespeichert; eine einzige rollierende Sicherung dient als Rückfall. Bei beschädigten Dateien wird nicht stillschweigend ein leeres Tagebuch angelegt.
 
 Keine Meal-Fotos und keine Audioaufnahmen werden dauerhaft gespeichert. Bilder existieren nur für den aktuellen Analysevorgang, max. 1280 px Kantenlänge. Der Produktcache ist auf **200 Produkte / 30 Tage** begrenzt, überschreibt dieselbe Datei und liegt im vom System löschbaren Cache-Verzeichnis. Netzwerk-Sessions verwenden keinen dauerhaften HTTP-Cache. Das Tagebuch selbst bleibt erhalten; es wächst ungefähr linear mit den Einträgen. Gerätebackups können es sichern, eine iCloud-Synchronisierung ist nicht implementiert.
 
-OpenAI wird nur für Foto bzw. die Interpretation einer gesprochenen/getippten Mahlzeit aufgerufen. Standard: **GPT-4.1 mini**, Responses API, striktes JSON-Schema, `store: false`, max. 600 Ausgabetokens, kein Gesprächsverlauf. Das gewählte Modell ist zentral in `Sources/AurixCore/AIContract.swift` konfiguriert. Modellverfügbarkeit und Guthaben hängen vom API-Projekt ab.
+OpenAI wird nur für Foto bzw. die Interpretation einer gesprochenen/getippten Mahlzeit aufgerufen. Standard: **GPT-5.6 Terra**, Responses API, striktes JSON-Schema, `store: false`, max. 900 Ausgabetokens, `reasoning.effort: none`, kein Gesprächsverlauf. Das gewählte Modell ist zentral in `Sources/AurixCore/AIContract.swift` konfiguriert. Modellverfügbarkeit und Guthaben hängen vom API-Projekt ab.
+
+Die Einstellungen zeigen die geschätzten Kosten der empfangenen Token-Belege im aktuellen Monat und die Dauer der letzten Antwort; es wird kein Anfrageverlauf gespeichert. Preise sind hinterlegte Standardtarife, keine Abrechnungsdaten. Details zur Auswahl und Prüfgrenzen: [Review September 2026](docs/review-2026-09-16.md).
 
 Das lokale Tageslimit zählt **Anfragen, auch fehlgeschlagene**, standardmässig 20, einstellbar 5–50. Es ist kein Preisversprechen und kein kontoweites Ausgabenlimit. Es gibt keine automatischen Wiederholungsversuche.
 
@@ -45,7 +52,7 @@ Das lokale Tageslimit zählt **Anfragen, auch fehlgeschlagene**, standardmässig
 
 Foto-/Sprachnährwerte bleiben Schätzungen. Sie sind sichtbar gekennzeichnet und korrigierbar. Ein Bild liefert keine verlässliche Messung der Portion oder versteckter Zutaten. Fehlende Barcode-Makros werden als Fehler behandelt, nicht als null eingesetzt. Open Food Facts kann unvollständig sein. Eigene Meals und manuelle Werte funktionieren offline; neue Produkte und KI benötigen Internet.
 
-Die Bedarfsschätzung verwendet Mifflin–St Jeor mit auswählbarer Aktivität, moderatem Zielaufschlag/-abschlag und manuell überschreibbaren Makrozielen. Sie ist ein Ausgangswert, keine Messung oder medizinische Beratung. Ein Zielgewicht verändert das Tagebuch nicht automatisch. Wasser, HealthKit, Gewichtsdiagramme, Cloud-Sync und Erinnerungen sind bewusst noch nicht eingebaut.
+Die Bedarfsschätzung verwendet Mifflin–St Jeor mit auswählbarer Aktivität, moderatem Zielaufschlag/-abschlag und manuell überschreibbaren Makrozielen. Sie ist ein Ausgangswert, keine Messung oder medizinische Beratung. Ein Zielgewicht verändert das Tagebuch nicht automatisch. Wasser, HealthKit, Cloud-Sync und Erinnerungen sind bewusst noch nicht eingebaut.
 
 ## Entwicklung und Prüfung
 
@@ -63,7 +70,7 @@ Das fertige Xcode-Projekt ist eingecheckt. Nach Änderungen an der Dateistruktur
 
 ## Quellen
 
-- [OpenAI: Structured Outputs](https://developers.openai.com/api/docs/guides/structured-outputs) und [GPT-4.1 mini](https://developers.openai.com/api/docs/models/gpt-4.1-mini).
+- [OpenAI: Structured Outputs](https://developers.openai.com/api/docs/guides/structured-outputs) und [GPT-5.6 Terra](https://developers.openai.com/api/docs/models/gpt-5.6-terra).
 - [OpenAI: API-Datenverarbeitung](https://developers.openai.com/api/docs/guides/your-data). `store: false` bedeutet nicht pauschal keine serverseitige Aufbewahrung.
 - [Open Food Facts: API](https://openfoodfacts.github.io/openfoodfacts-server/api/) und [Daten / ODbL](https://world.openfoodfacts.org/data). Der Cache ist von den persönlichen Daten getrennt; Produktdaten werden nicht als mitgelieferte proprietäre Datenbank veröffentlicht.
 - [Apple: Spracherkennung](https://developer.apple.com/tutorials/app-dev-training/transcribing-speech-to-text).
@@ -72,4 +79,4 @@ Das fertige Xcode-Projekt ist eingecheckt. Nach Änderungen an der Dateistruktur
 
 ## Design
 
-Midnight, warme Elfenbeintöne und dezentes Cyan. Die Landschaft prägt den Start; die Einführung nutzt danach einen ruhigen Verlauf, kurze Übergänge und native Gewichtsrollen für ganze Kilos plus `.0` / `.5`. Im Alltag bestimmen Ziele und Mahlzeiten die Oberfläche. Die drei Hauptbereiche sind über Apples native Tableiste erreichbar. Bewegung respektiert „Bewegung reduzieren“. Eigene generierte Markenassets sind direkt in den Asset-Katalog eingebunden. Die Herkunft und Gestaltungsbriefings stehen in `docs/design.md`.
+Midnight, warme Elfenbeintöne und dezentes Cyan. Die Landschaft prägt den Start; die Einführung nutzt danach einen ruhigen Verlauf, kurze Übergänge und native Gewichtsrollen für ganze Kilos plus `.0` / `.5`. Im Alltag bestimmen Ziele und Mahlzeiten die Oberfläche. Die vier Hauptbereiche sind über Apples native Tableiste erreichbar. Bewegung respektiert „Bewegung reduzieren“. Eigene generierte Markenassets sind direkt in den Asset-Katalog eingebunden. Die Herkunft und Gestaltungsbriefings stehen in `docs/design.md`.

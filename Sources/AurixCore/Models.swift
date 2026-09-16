@@ -124,16 +124,29 @@ public struct UserProfile: Codable, Equatable, Sendable {
 }
 
 public struct Archive: Codable, Sendable {
-    public var schemaVersion: Int = 1
+    public var schemaVersion: Int = 2
     public var profile: UserProfile?
     public var entries: [FoodEntry] = []
     public var meals: [SavedMeal] = []
-    public init(profile: UserProfile? = nil, entries: [FoodEntry] = [], meals: [SavedMeal] = []) {
-        self.profile = profile; self.entries = entries; self.meals = meals
+    public var measurements: [BodyMeasurement] = []
+    public init(profile: UserProfile? = nil, entries: [FoodEntry] = [], meals: [SavedMeal] = [], measurements: [BodyMeasurement] = []) {
+        self.profile = profile; self.entries = entries; self.meals = meals; self.measurements = measurements
+    }
+    private enum CodingKeys: String, CodingKey { case schemaVersion, profile, entries, meals, measurements }
+    public init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        let version = try values.decode(Int.self, forKey: .schemaVersion)
+        guard (1...2).contains(version) else { throw CoreError.invalidArchive }
+        profile = try values.decodeIfPresent(UserProfile.self, forKey: .profile)
+        entries = try values.decode([FoodEntry].self, forKey: .entries)
+        meals = try values.decode([SavedMeal].self, forKey: .meals)
+        measurements = version == 1 ? try values.decodeIfPresent([BodyMeasurement].self, forKey: .measurements) ?? [] : try values.decode([BodyMeasurement].self, forKey: .measurements)
+        schemaVersion = 2
     }
     public func validated() throws -> Archive {
-        guard schemaVersion == 1, entries.count <= 100_000, meals.count <= 10_000,
+        guard schemaVersion == 2, entries.count <= 100_000, meals.count <= 10_000, measurements.count <= 50_000,
               profile?.isValid != false, entries.allSatisfy(\.isValid),
+              measurements.allSatisfy(\.isValid), Set(measurements.map(\.id)).count == measurements.count,
               meals.allSatisfy({ !$0.name.isEmpty && $0.name.count <= 200 && $0.nutrition.isValid && $0.portion.count <= 200 }),
               Set(entries.map(\.id)).count == entries.count, Set(meals.map(\.id)).count == meals.count
         else { throw CoreError.invalidArchive }

@@ -63,7 +63,7 @@ struct Meter: View {
     let color: Color
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var body: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 8) {
             HStack { Text(name).font(.system(size: 13, weight: .medium)); Spacer() }.foregroundStyle(Theme.muted)
             ZStack {
                 Circle().stroke(color.opacity(0.12), lineWidth: 7)
@@ -71,10 +71,10 @@ struct Meter: View {
                     .stroke(color, style: StrokeStyle(lineWidth: 7, lineCap: .round)).rotationEffect(.degrees(-90))
                     .animation(reduceMotion ? nil : .spring(response: 0.65, dampingFraction: 0.85), value: value)
                 VStack(spacing: 2) {
-                    Text(value, format: .number.precision(.fractionLength(0))).font(.system(size: 28, weight: .semibold, design: .rounded)).monospacedDigit().minimumScaleFactor(0.7).lineLimit(1)
+                    Text(value, format: .number.precision(.fractionLength(0))).font(.system(size: 25, weight: .semibold, design: .rounded)).monospacedDigit().minimumScaleFactor(0.7).lineLimit(1)
                     Text("von \(Int(goal)) \(unit)").font(.system(size: 10)).foregroundStyle(Theme.muted)
                 }.padding(.horizontal, 8)
-            }.frame(width: 112, height: 112).padding(.vertical, 2)
+            }.frame(width: 96, height: 96).padding(.vertical, 2)
             Text(value <= goal ? "\(Int(max(0, goal - value))) \(unit) offen" : "+\(Int(value - goal)) \(unit)")
                 .font(.system(size: 11, weight: .medium)).foregroundStyle(color)
         }.padding(16).frame(maxWidth: .infinity).background(Theme.card, in: RoundedRectangle(cornerRadius: 24))

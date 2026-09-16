@@ -113,8 +113,10 @@ struct CaptureView: View {
             task?.cancel()
             task = Task {
                 do {
-                    guard let data = try await selected.loadTransferable(type: Data.self), data.count <= 30_000_000,
-                          let image = UIImage(data: data), let compressed = CameraController.compressed(image) else { throw AIService.ServiceError.imageTooLarge }
+                    guard let data = try await selected.loadTransferable(type: Data.self), data.count <= 30_000_000 else { throw AIService.ServiceError.imageTooLarge }
+                    try Task.checkCancellation()
+                    let compressed = await Task.detached(priority: .userInitiated) { CameraController.compressed(data) }.value
+                    guard let compressed else { throw AIService.ServiceError.imageTooLarge }
                     try Task.checkCancellation()
                     photo = nil; analysePhoto(compressed)
                 } catch { if !Task.isCancelled { self.error = error.localizedDescription }; photo = nil }

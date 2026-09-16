@@ -38,6 +38,7 @@ struct SettingsView: View {
                 Section("Deine Daten") {
                     LabeledContent("Tagebuch & Sicherung", value: store.storageDescription)
                     LabeledContent("Mahlzeiten", value: "\(store.entries.count)")
+                    LabeledContent("Körpermessungen", value: "\(store.measurements.count)")
                     Button { do { document = ArchiveDocument(data: try store.encoded()); exporting = true } catch { status = error.localizedDescription } } label: { Label("Sicherung exportieren", systemImage: "square.and.arrow.up") }
                     Button { importing = true } label: { Label("Sicherung importieren", systemImage: "square.and.arrow.down") }
                     Button {
@@ -47,7 +48,7 @@ struct SettingsView: View {
                 }
                 Section("AURIX") {
                     Text("Food fuels more than just today.").font(.system(size: 16, weight: .medium, design: .rounded))
-                    Text("Version 1.0 · Für deinen nächsten Gipfel.").font(.caption).foregroundStyle(Theme.muted)
+                    Text("Version 1.1 · Für deinen nächsten Gipfel.").font(.caption).foregroundStyle(Theme.muted)
                     Link("Produktdaten: Open Food Facts · ODbL", destination: URL(string: "https://world.openfoodfacts.org/data")!)
                     Link("OpenAI: Umgang mit API-Daten", destination: URL(string: "https://developers.openai.com/api/docs/guides/your-data")!)
                 }
@@ -65,7 +66,7 @@ struct SettingsView: View {
                         let size = try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
                         guard size <= 20_000_000 else { throw CoreError.invalidArchive }
                         try store.importArchive(Data(contentsOf: url))
-                        status = "Sicherung importiert. Bestehende Einträge und Ziele bleiben erhalten; fehlende Einträge wurden ergänzt."
+                        status = "Sicherung importiert. Fehlende Mahlzeiten und Messwerte wurden ergänzt; vorhandene Tagesmessungen und Ziele bleiben erhalten."
                     } catch { status = error.localizedDescription }
                 }
                 .alert("AURIX", isPresented: Binding(get: { status != nil }, set: { if !$0 { status = nil } })) {
@@ -104,9 +105,15 @@ struct AISettingsView: View {
                     Link("Details zur API-Datenverarbeitung", destination: URL(string: "https://developers.openai.com/api/docs/guides/your-data")!).font(.footnote)
                 }
                 Section("Verbrauch im Griff") {
+                    LabeledContent("Modell", value: "GPT-5.6 Terra")
                     Stepper("Max. \(limit) KI-Anfragen pro Tag", value: $limit, in: 5...50, step: 5)
                     LabeledContent("Heute angefragt", value: "\(AIService.requestsToday)")
+                    LabeledContent("Diesen Monat · geschätzt", value: AIService.estimatedMonthUSD.formatted(.currency(code: "USD").precision(.fractionLength(3))))
+                    if AIService.lastResponseSeconds > 0 {
+                        LabeledContent("Letzte Antwort", value: AIService.lastResponseSeconds.formatted(.number.precision(.fractionLength(1))) + " s")
+                    }
                     Text("Das Limit gilt für Anfragen aus dieser App, auch fehlgeschlagene. Es ist kein kontoweites Ausgabenlimit. Barcode und manuelle Einträge brauchen keine KI.").font(.caption).foregroundStyle(Theme.muted)
+                    Text("Die Kostenschätzung zählt empfangene Token-Belege dieser App zu hinterlegten Standardpreisen. Abgebrochene Anfragen können fehlen. Verbindlich ist deine OpenAI-Abrechnung.").font(.caption).foregroundStyle(Theme.muted)
                 }
                 Section {
                     Button {
@@ -140,7 +147,10 @@ struct GoalsEditor: View {
                     TextField("Vorname", text: $profile.name)
                     Stepper("Alter: \(profile.age)", value: $profile.age, in: 18...100)
                     NumberField(title: "Grösse", value: $profile.height, unit: "cm")
-                    NumberField(title: "Gewicht", value: $profile.weight, unit: "kg")
+                    NumberField(title: "Gewicht für Berechnung", value: $profile.weight, unit: "kg")
+                    if let latest = store.latestMeasurement(.weight), latest.value != profile.weight {
+                        Button("Letzte Messung übernehmen: \(latest.value.formatted()) kg") { profile.weight = latest.value }
+                    }
                     NumberField(title: "Zielgewicht", value: $profile.targetWeight, unit: "kg")
                     Picker("Ziel", selection: $profile.direction) { ForEach(GoalDirection.allCases, id: \.self) { Text($0.title).tag($0) } }
                     Picker("Bedarfsformel", selection: $profile.maleFormula) { Text("Männlich").tag(true); Text("Weiblich").tag(false) }

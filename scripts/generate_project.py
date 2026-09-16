@@ -51,7 +51,7 @@ coreLink = obj('core-link', 'PBXBuildFile', productRef=productDep)
 
 shared = dict(SWIFT_VERSION='5.0', IPHONEOS_DEPLOYMENT_TARGET='17.0', SDKROOT='iphoneos',
               TARGETED_DEVICE_FAMILY='1', SUPPORTED_PLATFORMS='iphoneos iphonesimulator',
-              CODE_SIGN_STYLE='Automatic', CURRENT_PROJECT_VERSION='1', MARKETING_VERSION='1.0',
+              CODE_SIGN_STYLE='Automatic', CURRENT_PROJECT_VERSION='2', MARKETING_VERSION='1.1',
               CLANG_ENABLE_MODULES='YES', ENABLE_USER_SCRIPT_SANDBOXING='YES')
 appsettings = dict(shared, PRODUCT_NAME='$(TARGET_NAME)', PRODUCT_BUNDLE_IDENTIFIER='ch.mauruspichler.aurix',
                    GENERATE_INFOPLIST_FILE='NO', INFOPLIST_FILE='Aurix/Resources/Info.plist',

@@ -90,6 +90,70 @@ final class AurixUITests: XCTestCase {
         XCTAssertTrue(app.tabBars.firstMatch.waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["Dein Tag, Maurus."].exists)
     }
+    func testBodyMeasurementsPersistEditAndChart() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-uitest-measurements", "-uitest-reset"]
+        app.launch()
+        let tabs = app.tabBars.firstMatch
+        XCTAssertTrue(tabs.waitForExistence(timeout: 10))
+        let weight = app.buttons["measurement.quick.weight"]
+        if !weight.isHittable { app.swipeUp() }
+        weight.tap()
+        XCTAssertTrue(app.pickerWheels.firstMatch.waitForExistence(timeout: 5))
+        XCTAssertEqual(app.pickerWheels.count, 2)
+        app.pickerWheels.element(boundBy: 0).adjust(toPickerWheelValue: "82")
+        app.pickerWheels.element(boundBy: 1).adjust(toPickerWheelValue: ".5")
+        capture("07-morning-weight")
+        app.buttons["measurement.save"].tap()
+        XCTAssertTrue(weight.waitForExistence(timeout: 5))
+        weight.tap()
+        XCTAssertEqual(app.pickerWheels.element(boundBy: 0).value as? String, "82")
+        XCTAssertEqual(app.pickerWheels.element(boundBy: 1).value as? String, ".5")
+        app.pickerWheels.element(boundBy: 0).adjust(toPickerWheelValue: "83")
+        app.buttons["measurement.save"].tap()
+        app.buttons["measurement.quick.waist"].tap()
+        let waist = app.textFields["measurement.waistValue"]
+        XCTAssertTrue(waist.waitForExistence(timeout: 5))
+        waist.tap()
+        // The previous week's value is prefilled; replace it in full.
+        if let text = waist.value as? String, !text.isEmpty {
+            waist.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: text.count))
+        }
+        waist.typeText("85.5")
+        app.buttons["measurement.save"].tap()
+        tabs.buttons["Verlauf"].tap()
+        XCTAssertTrue(app.navigationBars["Dein Verlauf"].waitForExistence(timeout: 5))
+        let chart = app.descendants(matching: .any)["progress.chart"].firstMatch
+        XCTAssertTrue(chart.waitForExistence(timeout: 5))
+        capture("08-weight-progress")
+        app.segmentedControls["progress.range"].buttons["3 Monate"].tap()
+        app.segmentedControls["progress.range"].buttons["Alle"].tap()
+        // 42 historic values + today's value; re-saving today creates no duplicate.
+        let count = app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] %@", "Messwerte · 43")).firstMatch
+        XCTAssertTrue(count.waitForExistence(timeout: 5))
+        app.segmentedControls["progress.metric"].buttons["Bauchumfang"].tap()
+        capture("09-waist-progress")
+        app.terminate()
+        app.launchArguments = ["-uitest-measurements"]
+        app.launch()
+        XCTAssertTrue(app.tabBars.firstMatch.waitForExistence(timeout: 10))
+        let persisted = app.buttons["measurement.quick.weight"]
+        if !persisted.isHittable { app.swipeUp() }
+        persisted.tap()
+        XCTAssertEqual(app.pickerWheels.element(boundBy: 0).value as? String, "83")
+        XCTAssertEqual(app.pickerWheels.element(boundBy: 1).value as? String, ".5")
+        let delete = app.buttons["measurement.delete"]
+        if !delete.isHittable { app.swipeUp() }
+        delete.tap()
+        app.buttons.matching(identifier: "Messwert löschen").element(boundBy: app.buttons.matching(identifier: "Messwert löschen").count - 1).tap()
+        XCTAssertTrue(app.buttons["measurement.quick.weight"].waitForExistence(timeout: 5))
+        app.buttons["measurement.quick.waist"].tap()
+        XCTAssertEqual(app.textFields["measurement.waistValue"].value as? String, "85.5")
+        app.buttons["Abbrechen"].tap()
+        app.tabBars.buttons["Verlauf"].tap()
+        app.segmentedControls["progress.range"].buttons["Alle"].tap()
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] %@", "Messwerte · 42")).firstMatch.waitForExistence(timeout: 5))
+    }
     private func capture(_ name: String) {
         let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         attachment.name = name; attachment.lifetime = .keepAlways

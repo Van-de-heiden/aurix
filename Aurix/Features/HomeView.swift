@@ -2,15 +2,15 @@ import SwiftUI
 import AurixCore
 
 private enum HomeSheet: Identifiable {
-    case capture(MealSlot, Date), edit(FoodEntry), settings, calendar
+    case capture(MealSlot, Date), edit(FoodEntry), settings, calendar, measurement(BodyMetric, Date)
     var id: String {
         switch self { case .capture: return "capture"; case .edit(let entry): return entry.id.uuidString
-        case .settings: return "settings"; case .calendar: return "calendar" }
+        case .settings: return "settings"; case .calendar: return "calendar"; case .measurement(let metric, _): return "measurement-\(metric.rawValue)" }
     }
 }
 
 struct HomeView: View {
-    private enum Tab: Hashable { case today, capture, meals }
+    private enum Tab: Hashable { case today, capture, meals, progress }
     @EnvironmentObject private var store: AppStore
     @Environment(\.scenePhase) private var phase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -41,12 +41,19 @@ struct HomeView: View {
             MealsView(date: entryDate, slot: .suggested(), onEntryAdded: { selectedTab = .today })
                 .tabItem { Label("Meine Meals", systemImage: "square.stack") }
                 .tag(Tab.meals)
+            ProgressScreen()
+                .tabItem { Label("Verlauf", systemImage: "chart.xyaxis.line") }
+                .tag(Tab.progress)
         }
         .sheet(item: $sheet) { item in
             switch item {
             case .capture(let slot, let day): CaptureView(date: day, slot: slot)
             case .edit(let entry): EntryEditor(entry: entry)
             case .settings: SettingsView()
+            case .measurement(let metric, let day):
+                let existing = store.measurements.first { $0.metric == metric && Calendar.current.isDate($0.date, inSameDayAs: day) }
+                MeasurementEditor(metric: metric, day: day, existing: existing,
+                    initialValue: store.latestMeasurement(metric)?.value ?? (metric == .weight ? profile.weight : nil))
             case .calendar:
                 NavigationStack {
                     DatePicker("Tag wählen", selection: $date, in: ...Date(), displayedComponents: .date).datePickerStyle(.graphical).padding()
@@ -64,7 +71,7 @@ struct HomeView: View {
     }
     private var dashboard: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
+            VStack(alignment: .leading, spacing: 18) {
                 HStack {
                     Brand()
                     Spacer()
@@ -74,12 +81,11 @@ struct HomeView: View {
                 }
                 HStack(alignment: .bottom) {
                     VStack(alignment: .leading, spacing: 6) {
-                        Text(isToday ? "DRANBLEIBEN LOHNT SICH." : "DEIN TAGEBUCH").font(.system(size: 9, weight: .semibold)).tracking(2).foregroundStyle(Theme.cyan)
                         Text(isToday ? "Dein Tag, \(profile.name)." : date.formatted(.dateTime.day().month(.wide)))
                             .font(.system(size: 28, weight: .medium, design: .rounded)).tracking(-0.7).minimumScaleFactor(0.75).lineLimit(1)
                     }
                     Spacer(minLength: 4)
-                    let streak = GoalCalculator.trackingStreak(entries: store.entries)
+                    let streak = store.trackingStreak
                     if streak > 0 {
                         Label("\(streak)", systemImage: "flame.fill").font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.carbs)
                             .padding(.horizontal, 10).padding(.vertical, 8).background(Theme.carbs.opacity(0.09), in: Capsule())
@@ -94,10 +100,7 @@ struct HomeView: View {
                     Meter(name: "Carbs", value: total.carbs, goal: profile.goals.carbs, unit: "g", color: Theme.carbs)
                     Meter(name: "Fette", value: total.fat, goal: profile.goals.fat, unit: "g", color: Theme.fat)
                 }.accessibilityIdentifier("dashboard.meters")
-                HStack(spacing: 10) {
-                    Image(systemName: "mountain.2").foregroundStyle(Theme.cyan)
-                    Text(motivation).font(.system(size: 12)).foregroundStyle(Theme.muted)
-                }
+                measurementShortcuts
                 HStack {
                     Text("Deine Mahlzeiten").font(.system(size: 20, weight: .semibold, design: .rounded))
                     Spacer(); Text("\(currentEntries.count) Einträge").font(.caption).foregroundStyle(Theme.muted)
@@ -119,6 +122,26 @@ struct HomeView: View {
                 }
             }.animation(reduceMotion ? nil : .snappy, value: store.toast)
         }
+    }
+    private var measurementShortcuts: some View {
+        HStack(spacing: 0) {
+            ForEach(BodyMetric.allCases) { metric in
+                let measurement = store.measurements.first { $0.metric == metric && Calendar.current.isDate($0.date, inSameDayAs: date) }
+                let due = isToday && BodyProgress.isDue(metric, measurements: store.measurements)
+                Button { sheet = .measurement(metric, min(entryDate, Date())) } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: metric.symbol).font(.system(size: 18)).foregroundStyle(Theme.cyan)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(metric.title).font(.system(size: 12, weight: .medium)).foregroundStyle(Theme.ivory)
+                            Text(measurement.map { $0.value.formatted(.number.precision(.fractionLength(1))) + " " + metric.unit } ?? (due ? "Jetzt erfassen" : metric == .waist && isToday ? "Diese Woche erfasst" : "Erfassen"))
+                                .font(.system(size: 11)).foregroundStyle(due ? Theme.cyan : Theme.muted).lineLimit(1).minimumScaleFactor(0.8)
+                        }
+                        Spacer(minLength: 0)
+                    }.padding(14).frame(maxWidth: .infinity, alignment: .leading)
+                }.buttonStyle(.plain).accessibilityIdentifier("measurement.quick.\(metric.rawValue)")
+                if metric == .weight { Divider().frame(height: 30) }
+            }
+        }.background(Theme.card.opacity(0.7), in: RoundedRectangle(cornerRadius: 20))
     }
     private var entryDate: Date {
         let calendar = Calendar.current, now = Date()
@@ -162,13 +185,6 @@ struct HomeView: View {
                 }.buttonStyle(PressStyle())
             }
         }.padding(16).background(Theme.card, in: RoundedRectangle(cornerRadius: 22))
-    }
-    private var motivation: String {
-        if currentEntries.isEmpty { return "Der nächste Schritt beginnt mit deiner ersten Mahlzeit." }
-        let streak = GoalCalculator.trackingStreak(entries: store.entries)
-        if [3, 7, 14, 30, 60, 100].contains(streak) { return "\(streak) Tage dran geblieben. Dein nächster Meilenstein ist erreicht." }
-        if store.totals(on: date).protein >= profile.goals.protein { return "Proteinziel erreicht. Ein Baustein für deinen Fortschritt." }
-        return "Konstanz zählt. Eine Mahlzeit nach der anderen."
     }
     private func moveDay(_ direction: Int) {
         if let next = Calendar.current.date(byAdding: .day, value: direction, to: date) { date = min(next, Date()) }

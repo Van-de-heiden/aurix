@@ -173,6 +173,7 @@ private struct WelcomeBackdrop: View {
 
 struct WeightSelection: View {
     @Binding var value: Double
+    var range: ClosedRange<Int> = 40...200
 
     var body: some View {
         VStack(spacing: 14) {
@@ -182,7 +183,7 @@ struct WeightSelection: View {
                     .minimumScaleFactor(0.7).lineLimit(1)
                 Text("kg").foregroundStyle(Theme.cyan).font(.title3)
             }.frame(maxWidth: .infinity)
-            KilogramWheel(value: $value).frame(height: 190)
+            KilogramWheel(value: $value, range: range).frame(height: 190)
         }.padding(.vertical, 18).background(Theme.card, in: RoundedRectangle(cornerRadius: 26))
     }
 }
@@ -190,8 +191,9 @@ struct WeightSelection: View {
 /// UIKit creates only the visible wheel rows, rather than 1,601 SwiftUI views.
 private struct KilogramWheel: UIViewRepresentable {
     @Binding var value: Double
+    var range: ClosedRange<Int> = 40...200
 
-    func makeCoordinator() -> Coordinator { Coordinator(value: $value) }
+    func makeCoordinator() -> Coordinator { Coordinator(value: $value, range: range) }
     func makeUIView(context: Context) -> UIPickerView {
         let picker = UIPickerView()
         picker.dataSource = context.coordinator
@@ -208,14 +210,15 @@ private struct KilogramWheel: UIViewRepresentable {
     final class Coordinator: NSObject, UIPickerViewDataSource, UIPickerViewDelegate {
         var value: Binding<Double>
         private var whole = 80
-        init(value: Binding<Double>) { self.value = value }
+        let range: ClosedRange<Int>
+        init(value: Binding<Double>, range: ClosedRange<Int>) { self.value = value; self.range = range }
 
         func numberOfComponents(in pickerView: UIPickerView) -> Int { 2 }
         func pickerView(_ pickerView: UIPickerView, numberOfRowsInComponent component: Int) -> Int {
-            component == 0 ? 161 : (whole == 200 ? 1 : 2)
+            component == 0 ? range.count : (whole == range.upperBound ? 1 : 2)
         }
         func pickerView(_ pickerView: UIPickerView, titleForRow row: Int, forComponent component: Int) -> String? {
-            component == 0 ? String(row + 40) : (row == 0 ? ".0" : ".5")
+            component == 0 ? String(row + range.lowerBound) : (row == 0 ? ".0" : ".5")
         }
         func pickerView(_ pickerView: UIPickerView, widthForComponent component: Int) -> CGFloat {
             pickerView.bounds.width * 0.42
@@ -224,20 +227,20 @@ private struct KilogramWheel: UIViewRepresentable {
         func pickerView(_ pickerView: UIPickerView, didSelectRow row: Int, inComponent component: Int) {
             let half = max(0, pickerView.selectedRow(inComponent: 1))
             if component == 0 {
-                whole = row + 40
+                whole = row + range.lowerBound
                 pickerView.reloadComponent(1)
-                pickerView.selectRow(whole == 200 ? 0 : half, inComponent: 1, animated: false)
+                pickerView.selectRow(whole == range.upperBound ? 0 : half, inComponent: 1, animated: false)
             }
-            value.wrappedValue = Double(whole) + (whole == 200 ? 0 : Double(max(0, pickerView.selectedRow(inComponent: 1))) * 0.5)
+            value.wrappedValue = Double(whole) + (whole == range.upperBound ? 0 : Double(max(0, pickerView.selectedRow(inComponent: 1))) * 0.5)
         }
         func synchronize(_ picker: UIPickerView, value: Double) {
-            let rounded = min(200, max(40, (value * 2).rounded() / 2))
+            let rounded = min(Double(range.upperBound), max(Double(range.lowerBound), (value * 2).rounded() / 2))
             let newWhole = Int(rounded)
             if whole != newWhole {
                 whole = newWhole
                 picker.reloadComponent(1)
             }
-            let selections = [whole - 40, Int((rounded - Double(whole)) * 2)]
+            let selections = [whole - range.lowerBound, Int((rounded - Double(whole)) * 2)]
             for component in 0...1 where picker.selectedRow(inComponent: component) != selections[component] {
                 picker.selectRow(selections[component], inComponent: component, animated: false)
             }
