@@ -126,6 +126,14 @@ final class AurixUITests: XCTestCase {
         let chart = app.descendants(matching: .any)["progress.chart"].firstMatch
         XCTAssertTrue(chart.waitForExistence(timeout: 5))
         capture("08-weight-progress")
+        chart.coordinate(withNormalizedOffset: CGVector(dx: 0.55, dy: 0.5)).tap()
+        let selected = app.buttons["progress.selectedMeasurement"]
+        XCTAssertTrue(selected.waitForExistence(timeout: 5))
+        if !selected.isHittable { app.swipeUp() }
+        capture("10-selected-measurement")
+        selected.tap()
+        XCTAssertTrue(app.buttons["measurement.save"].waitForExistence(timeout: 5))
+        app.buttons["Abbrechen"].tap()
         app.segmentedControls["progress.range"].buttons["3 Monate"].tap()
         app.segmentedControls["progress.range"].buttons["Alle"].tap()
         // 42 historic values + today's value; re-saving today creates no duplicate.

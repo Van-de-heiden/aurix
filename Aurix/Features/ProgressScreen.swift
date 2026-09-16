@@ -84,7 +84,7 @@ struct ProgressScreen: View {
                                     }.font(.subheadline)
                                 }.accessibilityIdentifier("progress.selectedMeasurement")
                             }
-                            Text(metric == .weight ? "Punkte: Tageswerte · helle Linie: Mittel der vorhandenen Messungen in 7 Tagen. Tippe auf den Verlauf für einen Wert." : "Deine Messungen über die Wochen. Tippe auf den Verlauf für einen Wert.")
+                            Text(metric == .weight ? "Türkis: Tageswerte · hell: 7-Tage-Mittel. Tippe auf die Kurve für Details." : "Deine Messungen über die Wochen. Tippe auf den Verlauf für einen Wert.")
                                 .font(.caption).foregroundStyle(Theme.muted)
                         }
                     }.listRowBackground(Theme.card)
@@ -191,7 +191,11 @@ private struct MeasurementChart: View {
         .chartYScale(domain: yDomain)
         .chartXScale(domain: start...Calendar.current.date(byAdding: .day, value: 1, to: Calendar.current.startOfDay(for: Date()))!)
         .chartXSelection(value: $selectedDate)
-        .chartXAxis { AxisMarks(values: .automatic(desiredCount: 4)) { _ in AxisValueLabel(format: .dateTime.day().month(.abbreviated)); AxisGridLine() } }
+        .chartGesture { proxy in
+            // Keep the selection after lifting the finger so its edit button stays reachable.
+            SpatialTapGesture().onEnded { proxy.selectXValue(at: $0.location.x) }
+        }
+        .chartXAxis { AxisMarks(values: .automatic(desiredCount: 4)) { _ in AxisValueLabel(format: .dateTime.day().month(.twoDigits)); AxisGridLine() } }
         .chartYAxis { AxisMarks(position: .leading, values: .automatic(desiredCount: 4)) }
         .chartLegend(.hidden)
         .accessibilityLabel("\(metric.title) in \(metric.unit). \(points.count) Messungen. Bei langen Zeiträumen ist die Darstellung verdichtet.")
@@ -237,6 +241,7 @@ struct MeasurementEditor: View {
                 } header: { Text(metric.title) } footer: {
                     Text(metric == .weight ? "Für vergleichbare Werte möglichst immer unter ähnlichen Bedingungen messen." : "Einmal pro Woche genügt. Miss jedes Mal an derselben Stelle und unter ähnlichen Bedingungen.")
                 }
+                .listRowBackground(Theme.card)
                 if existing != nil {
                     Section { Button("Messwert löschen", role: .destructive) { deleting = true }.accessibilityIdentifier("measurement.delete") }
                 }
