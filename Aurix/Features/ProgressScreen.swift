@@ -224,7 +224,7 @@ struct MeasurementEditor: View {
                 Section {
                     DatePicker("Tag", selection: $date, in: ...Date(), displayedComponents: .date)
                 } footer: { Text("Ein Wert pro Tag. Erneutes Speichern aktualisiert diesen Tag.") }
-                Section(metric.title) {
+                Section {
                     if metric == .weight {
                         WeightSelection(value: $weight, range: 35...300).listRowInsets(EdgeInsets())
                     } else {
@@ -234,7 +234,7 @@ struct MeasurementEditor: View {
                             Text("cm").foregroundStyle(Theme.muted)
                         }
                     }
-                } footer: {
+                } header: { Text(metric.title) } footer: {
                     Text(metric == .weight ? "Für vergleichbare Werte möglichst immer unter ähnlichen Bedingungen messen." : "Einmal pro Woche genügt. Miss jedes Mal an derselben Stelle und unter ähnlichen Bedingungen.")
                 }
                 if existing != nil {

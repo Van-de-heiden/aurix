@@ -25,7 +25,7 @@ final class SpeechRecorder: ObservableObject {
         let permission = await withCheckedContinuation { continuation in SFSpeechRecognizer.requestAuthorization { continuation.resume(returning: $0) } }
         guard generation == run, !Task.isCancelled else { preparing = false; return }
         guard permission == .authorized else { preparing = false; error = "Erlaube die Spracherkennung in den iPhone-Einstellungen. Du kannst dein Essen auch tippen."; return }
-        let microphone = await withCheckedContinuation { continuation in AVAudioSession.sharedInstance().requestRecordPermission { continuation.resume(returning: $0) } }
+        let microphone = await withCheckedContinuation { continuation in AVAudioApplication.requestRecordPermission { continuation.resume(returning: $0) } }
         guard generation == run, !Task.isCancelled else { preparing = false; return }
         guard microphone else { preparing = false; error = "Der Mikrofonzugriff ist ausgeschaltet."; return }
         guard let recognizer = SFSpeechRecognizer(locale: Locale(identifier: "de-CH")), recognizer.isAvailable else { preparing = false; error = "Die Spracherkennung ist gerade nicht verfügbar. Du kannst die Mahlzeit unten tippen."; return }
