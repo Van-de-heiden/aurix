@@ -90,7 +90,7 @@ final class AurixUITests: XCTestCase {
         XCTAssertTrue(app.tabBars.firstMatch.waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["Dein Tag, Maurus."].exists)
     }
-    func testBodyMeasurementsPersistEditAndChart() {
+    func testBodyMeasurementsPersistEditAndChart() throws {
         let app = XCUIApplication()
         app.launchArguments = ["-uitest-measurements", "-uitest-reset"]
         app.launch()
@@ -145,7 +145,8 @@ final class AurixUITests: XCTestCase {
         let delete = app.buttons["measurement.delete"]
         if !delete.isHittable { app.swipeUp() }
         delete.tap()
-        app.buttons.matching(identifier: "Messwert löschen").element(boundBy: app.buttons.matching(identifier: "Messwert löschen").count - 1).tap()
+        let confirmation = try XCTUnwrap(app.buttons.matching(identifier: "Messwert löschen").allElementsBoundByIndex.first { $0.isHittable })
+        confirmation.tap()
         XCTAssertTrue(app.buttons["measurement.quick.weight"].waitForExistence(timeout: 5))
         app.buttons["measurement.quick.waist"].tap()
         XCTAssertEqual(app.textFields["measurement.waistValue"].value as? String, "85.5")
