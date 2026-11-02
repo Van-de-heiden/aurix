@@ -49,14 +49,14 @@ struct ProgressScreen: View {
                                 VStack(alignment: .leading, spacing: 5) {
                                     Text("Zuletzt · \(latest.date.formatted(.dateTime.day().month(.abbreviated)))").font(.caption).foregroundStyle(Theme.muted)
                                     Text("\(latest.value.formatted(.number.precision(.fractionLength(1)))) \(metric.unit)")
-                                        .font(.system(size: 32, weight: .medium, design: .rounded)).monospacedDigit()
+                                        .font(.system(size: 40, weight: .bold, design: .rounded)).tracking(-1).monospacedDigit()
                                 }
                                 Spacer()
                                 if let first = points.first, let last = points.last, points.count > 1 {
                                     VStack(alignment: .trailing, spacing: 5) {
                                         Text("Im Zeitraum").font(.caption).foregroundStyle(Theme.muted)
                                         Text((last.value - first.value).formatted(.number.sign(strategy: .always()).precision(.fractionLength(1))) + " " + metric.unit)
-                                            .font(.title3.weight(.medium)).monospacedDigit().foregroundStyle(Theme.cyan)
+                                            .font(.title3.weight(.medium)).monospacedDigit().foregroundStyle(Theme.lime)
                                     }
                                 }
                             }.padding(.vertical, 5)
@@ -84,8 +84,13 @@ struct ProgressScreen: View {
                                     }.font(.subheadline)
                                 }.accessibilityIdentifier("progress.selectedMeasurement")
                             }
-                            Text(metric == .weight ? "Türkis: Tageswerte · hell: 7-Tage-Mittel. Tippe auf die Kurve für Details." : "Deine Messungen über die Wochen. Tippe auf den Verlauf für einen Wert.")
-                                .font(.caption).foregroundStyle(Theme.muted)
+                            HStack(spacing: 16) {
+                                Label { Text("Messwerte") } icon: { Circle().fill(Theme.lime).frame(width: 6, height: 6) }
+                                if metric == .weight {
+                                    Label { Text("7-Tage-Mittel") } icon: { Capsule().fill(Theme.ivory).frame(width: 12, height: 2) }
+                                }
+                            }.font(.system(size: 10, weight: .medium)).foregroundStyle(Theme.muted)
+                            Text("Tippe auf den Verlauf für Details und Korrekturen.").font(.system(size: 10)).foregroundStyle(Theme.muted)
                         }
                     }.listRowBackground(Theme.card)
                     if !history.isEmpty {
@@ -172,10 +177,10 @@ private struct MeasurementChart: View {
         Chart {
             ForEach(displayed(points)) { point in
                 LineMark(x: .value("Tag", point.date), y: .value(metric.unit, point.value), series: .value("Serie", "Messwert"))
-                    .foregroundStyle(Theme.cyan.opacity(metric == .weight ? 0.4 : 0.8))
+                    .foregroundStyle(Theme.lime.opacity(metric == .weight ? 0.4 : 0.8))
                     .lineStyle(StrokeStyle(lineWidth: 1.5))
                 PointMark(x: .value("Tag", point.date), y: .value(metric.unit, point.value))
-                    .foregroundStyle(Theme.cyan).symbolSize(22)
+                    .foregroundStyle(Theme.lime).symbolSize(22)
                     .accessibilityLabel(point.date.formatted(.dateTime.day().month()))
                     .accessibilityValue("\(point.value.formatted()) \(metric.unit)")
             }
@@ -190,10 +195,18 @@ private struct MeasurementChart: View {
         }
         .chartYScale(domain: yDomain)
         .chartXScale(domain: start...Calendar.current.date(byAdding: .day, value: 1, to: Calendar.current.startOfDay(for: Date()))!)
-        .chartXSelection(value: $selectedDate)
-        .chartGesture { proxy in
-            // Keep the selection after lifting the finger so its edit button stays reachable.
-            SpatialTapGesture().onEnded { proxy.selectXValue(at: $0.location.x) }
+        .chartOverlay { proxy in
+            GeometryReader { geometry in
+                Color.clear.contentShape(Rectangle())
+                    .gesture(SpatialTapGesture().onEnded { tap in
+                        guard let plot = proxy.plotFrame else { return }
+                        let frame = geometry[plot]
+                        let x = tap.location.x - frame.minX
+                        guard x >= 0, x <= frame.width else { return }
+                        // A tap keeps the value selected without capturing vertical diary scrolling.
+                        selectedDate = proxy.value(atX: x, as: Date.self)
+                    })
+            }
         }
         .chartXAxis { AxisMarks(values: .automatic(desiredCount: 4)) { _ in AxisValueLabel(format: .dateTime.day().month(.twoDigits)); AxisGridLine() } }
         .chartYAxis { AxisMarks(position: .leading, values: .automatic(desiredCount: 4)) }

@@ -27,7 +27,7 @@ struct EntryEditor: View {
                             ForEach([0.5, 1.0, 1.5, 2.0], id: \.self) { factor in
                                 Button { scale(factor) } label: {
                                     Text(factor.formatted(.number.precision(.fractionLength(0...1))) + "×").frame(maxWidth: .infinity).padding(.vertical, 10)
-                                        .background(multiplier == factor ? Theme.cyan.opacity(0.18) : Theme.card, in: RoundedRectangle(cornerRadius: 10))
+                                        .background(multiplier == factor ? Theme.lime.opacity(0.18) : Theme.card, in: RoundedRectangle(cornerRadius: 10))
                                 }.buttonStyle(.plain)
                             }
                         }

@@ -15,32 +15,25 @@ actor BarcodeService {
         FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0].appendingPathComponent("aurix-products.json")
     }
     func product(for code: String) async throws -> ProductRecord {
-        guard (8...14).contains(code.count), code.allSatisfy(\.isNumber) else { throw CoreError.incompleteProduct }
+        guard let code = Barcode.normalized(code) else { throw ProductLookupError.invalidBarcode }
         load()
         if let hit = cache[code], hit.storedAt > Date().addingTimeInterval(-30 * 86400) { return hit.product }
         cache[code] = nil
-        let fields = "product_name,product_name_de,brands,categories_tags,quantity,product_quantity,product_quantity_unit,serving_size,nutriments"
+        let fields = "product_name,product_name_de,generic_name,generic_name_de,categories_tags,quantity,product_quantity,product_quantity_unit,serving_size,nutriments"
         var request = URLRequest(url: URL(string: "https://world.openfoodfacts.org/api/v2/product/\(code).json?fields=\(fields)")!)
-        request.setValue("AURIX-Personal/1.0 (iOS; https://github.com/Van-de-heiden/aurix)", forHTTPHeaderField: "User-Agent")
-        let (data, response) = try await session.data(for: request)
-        try Task.checkCancellation()
-        guard let http = response as? HTTPURLResponse, http.statusCode == 200, data.count < 1_000_000,
-              let root = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let product = root["product"] as? [String: Any], let nutrients = product["nutriments"] as? [String: Any] else { throw CoreError.incompleteProduct }
-        func number(_ value: Any?) -> Double? {
-            if let n = value as? NSNumber { return n.doubleValue }
-            if let s = value as? String { return Double(s.replacingOccurrences(of: ",", with: ".")) }
-            return nil
+        request.setValue("DAYFUEL/2.0 (iOS; https://github.com/Van-de-heiden/aurix)", forHTTPHeaderField: "User-Agent")
+        let data: Data
+        let response: URLResponse
+        do { (data, response) = try await session.data(for: request) }
+        catch {
+            if Task.isCancelled { throw CancellationError() }
+            throw ProductLookupError.unavailable
         }
-        let calories = number(nutrients["energy-kcal_100g"]) ?? number(nutrients["energy-kj_100g"]).map { $0 / 4.184 } ?? number(nutrients["energy_100g"]).map { $0 / 4.184 }
-        guard let calories, let protein = number(nutrients["proteins_100g"]), let carbs = number(nutrients["carbohydrates_100g"]), let fat = number(nutrients["fat_100g"]),
-              let name = (product["product_name_de"] as? String).flatMap({ $0.isEmpty ? nil : $0 }) ?? (product["product_name"] as? String), !name.isEmpty else { throw CoreError.incompleteProduct }
-        let result = ProductRecord(barcode: code, name: String(name.prefix(200)),
-            categories: (product["categories_tags"] as? [String] ?? []).joined(separator: " "),
-            quantityText: product["quantity"] as? String ?? "", quantity: number(product["product_quantity"]),
-            quantityUnit: product["product_quantity_unit"] as? String ?? "g", serving: product["serving_size"] as? String ?? "",
-            per100: Nutrition(calories: calories, protein: protein, carbs: carbs, fat: fat))
-        guard result.per100.isValid, calories <= 1000, protein <= 100, carbs <= 100, fat <= 100 else { throw CoreError.incompleteProduct }
+        try Task.checkCancellation()
+        guard let http = response as? HTTPURLResponse else { throw ProductLookupError.unavailable }
+        if http.statusCode == 404 { throw ProductLookupError.notFound }
+        guard http.statusCode == 200 else { throw ProductLookupError.unavailable }
+        let result = try ProductDecoder.decode(data, barcode: code)
         cache[code] = Cached(product: result, storedAt: Date())
         trim(); persist()
         return result

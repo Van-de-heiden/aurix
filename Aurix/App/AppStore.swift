@@ -23,6 +23,9 @@ final class AppStore: ObservableObject {
     init() {
         var root = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("Aurix", isDirectory: true)
         #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-screenshots-welcome") || ProcessInfo.processInfo.arguments.contains("-screenshots-dashboard") || ProcessInfo.processInfo.arguments.contains("-uitest-scanner") {
+            root = root.appendingPathComponent("UITestPreview", isDirectory: true)
+        }
         if ProcessInfo.processInfo.arguments.contains("-uitest-measurements") {
             root = root.appendingPathComponent("UITestMeasurements", isDirectory: true)
             if ProcessInfo.processInfo.arguments.contains("-uitest-reset") { try? FileManager.default.removeItem(at: root) }
@@ -50,6 +53,10 @@ final class AppStore: ObservableObject {
                 FoodEntry(name: "Poulet mit Reis", nutrition: Nutrition(calories: 720, protein: 52, carbs: 85, fat: 18), slot: .lunch, source: .photo, estimated: true),
                 FoodEntry(name: "Protein-Drink", nutrition: Nutrition(calories: 230, protein: 30, carbs: 18, fat: 4), slot: .snack, source: .barcode)
             ])
+        }
+        if ProcessInfo.processInfo.arguments.contains("-uitest-scanner") {
+            var profile = UserProfile(); profile.name = "Maurus"
+            archive = Archive(profile: profile, meals: [SavedMeal(name: "Scanner Test Drink", nutrition: Nutrition(calories: 180, protein: 25, carbs: 12, fat: 3), portion: "330 ml", barcode: "036000291452")])
         }
         if ProcessInfo.processInfo.arguments.contains("-uitest-measurements"), archive.profile == nil {
             var profile = UserProfile(); profile.name = "Maurus"; profile.weight = 82

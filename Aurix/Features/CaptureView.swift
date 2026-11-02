@@ -2,7 +2,7 @@ import SwiftUI
 import PhotosUI
 import AurixCore
 
-private enum CaptureMode: String, CaseIterable, Identifiable {
+enum CaptureMode: String, CaseIterable, Identifiable {
     case photo = "Foto", barcode = "Barcode", voice = "Sprache", manual = "Manuell"
     var id: String { rawValue }
     var symbol: String {
@@ -19,6 +19,7 @@ struct CaptureView: View {
     let date: Date
     @State var slot: MealSlot
     var onClose: (() -> Void)? = nil
+    var initialMode = CaptureMode.photo
     @State private var mode = CaptureMode.photo
     @StateObject private var camera = CameraController()
     @StateObject private var speech = SpeechRecorder()
@@ -27,9 +28,12 @@ struct CaptureView: View {
     @State private var error: String?
     @State private var keySheet = false
     @State private var mealsSheet = false
+    @State private var barcodeSheet = false
+    @State private var typedBarcode = ""
     @State private var photo: PhotosPickerItem?
     @State private var typed = ""
     @State private var unknownBarcode: String?
+    @State private var barcodeForManual: String?
     @State private var task: Task<Void, Never>?
     @State private var operation = UUID()
     @State private var finishingVoice = false
@@ -50,11 +54,11 @@ struct CaptureView: View {
                 }.padding(.horizontal, 22)
                 HStack(spacing: 6) {
                     ForEach(CaptureMode.allCases) { item in
-                        Button { mode = item } label: {
+                        Button { barcodeForManual = nil; mode = item } label: {
                             VStack(spacing: 7) { Image(systemName: item.symbol).font(.system(size: 19)); Text(item.rawValue).font(.system(size: 11, weight: .medium)) }
                                 .frame(maxWidth: .infinity).padding(.vertical, 14)
                                 .foregroundStyle(mode == item ? Theme.background : Theme.muted)
-                                .background(mode == item ? Theme.cyan : Theme.card, in: RoundedRectangle(cornerRadius: 17))
+                                .background(mode == item ? Theme.lime : Theme.card, in: RoundedRectangle(cornerRadius: 17))
                         }.buttonStyle(PressStyle()).disabled(busy).accessibilityIdentifier("capture.\(item.id)")
                     }
                 }.padding(.horizontal, 22)
@@ -62,11 +66,11 @@ struct CaptureView: View {
                     switch mode {
                     case .photo, .barcode: cameraContent
                     case .voice: voiceContent
-                    case .manual: ManualCaptureForm(date: date, slot: slot, barcode: unknownBarcode) { close() }
+                    case .manual: ManualCaptureForm(date: date, slot: slot, barcode: barcodeForManual) { close() }
                     }
                 }.frame(maxWidth: .infinity, maxHeight: .infinity)
             }.padding(.top, 8).aurixScreen()
-                .navigationTitle("Essen erfassen").navigationBarTitleDisplayMode(.inline)
+                .navigationTitle("Fuel hinzufügen").navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     if onClose == nil {
                         ToolbarItem(placement: .cancellationAction) {
@@ -79,30 +83,41 @@ struct CaptureView: View {
                         ZStack {
                             Theme.background.opacity(0.88).ignoresSafeArea()
                             VStack(spacing: 18) {
-                                ProgressView().tint(Theme.cyan).scaleEffect(1.3)
+                                ProgressView().tint(Theme.lime).scaleEffect(1.3)
                                 Text(busyLabel).font(.system(size: 19, weight: .medium, design: .rounded))
                                 Text("Wird direkt in \(slot.title) erfasst.").font(.footnote).foregroundStyle(Theme.muted)
-                                Button("Abbrechen") { operation = UUID(); task?.cancel(); busy = false; camera.retryBarcode() }.font(.footnote).padding(.top, 10)
+                                Button("Abbrechen") { operation = UUID(); task?.cancel(); busy = false; camera.retryBarcode(); startMode() }.font(.footnote).padding(.top, 10)
                             }.padding(26)
                         }
                     }
                 }
                 .alert("Noch nicht erfasst", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) {
-                    if unknownBarcode != nil { Button("Produkt von Hand speichern") { mode = .manual; error = nil } }
-                    Button("Nochmals versuchen", role: .cancel) { error = nil; camera.retryBarcode() }
+                    if unknownBarcode != nil { Button("Produkt von Hand speichern") { barcodeForManual = unknownBarcode; mode = .manual; error = nil } }
+                    Button("Nochmals versuchen", role: .cancel) { error = nil; unknownBarcode = nil; camera.retryBarcode(); startMode() }
                 } message: { Text(error ?? "") }
                 .sheet(isPresented: $keySheet, onDismiss: { hasKey = Keychain.read() != nil }) { AISettingsView() }
                 .sheet(isPresented: $mealsSheet) { MealsView(date: date, slot: slot) }
+                .sheet(isPresented: $barcodeSheet) { barcodeEntry }
         }
         .onAppear {
             camera.onPhoto = { data in analysePhoto(data) }
             camera.onBarcode = { code in scan(code) }
             speech.onTimedFinish = { finishVoice() }
+            mode = initialMode
             startMode()
         }
-        .onChange(of: mode) { _, _ in operation = UUID(); task?.cancel(); finishingVoice = false; speech.cancel(); camera.stop(); startMode() }
+        .onChange(of: mode) { _, _ in
+            operation = UUID(); task?.cancel(); busy = false; finishingVoice = false; error = nil; unknownBarcode = nil
+            speech.cancel(); camera.stop(); if mode != .manual { barcodeForManual = nil }; startMode()
+        }
+        .onChange(of: keySheet) { _, shown in if shown { camera.stop() } else if !busy { startMode() } }
+        .onChange(of: mealsSheet) { _, shown in if shown { camera.stop() } else if !busy { startMode() } }
+        .onChange(of: barcodeSheet) { _, shown in if shown { camera.stop() } else if !busy { startMode() } }
         .onChange(of: phase) { _, value in
-            if value != .active { speech.cancel(); camera.stop() }
+            if value != .active {
+                operation = UUID(); task?.cancel(); busy = false; finishingVoice = false
+                speech.cancel(); camera.stop()
+            }
             else if !busy { startMode() }
         }
         .onDisappear {
@@ -127,55 +142,105 @@ struct CaptureView: View {
         if let onClose { onClose() } else { dismiss() }
     }
     private var cameraContent: some View {
-        VStack(spacing: 18) {
+        VStack(spacing: 16) {
             ZStack {
                 CameraPreview(session: camera.session)
                 if !camera.ready {
                     Theme.card
                     VStack(spacing: 14) {
-                        Image(systemName: "camera").font(.system(size: 32)).foregroundStyle(Theme.cyan)
-                        Text(camera.error ?? "Kamera wird gestartet …").font(.system(size: 14)).multilineTextAlignment(.center).foregroundStyle(Theme.muted)
-                        if camera.error != nil {
-                            Button("iPhone-Einstellungen öffnen") { if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) } }.font(.caption)
+                        Image(systemName: mode == .barcode ? "barcode.viewfinder" : "camera")
+                            .font(.system(size: 36, weight: .light)).foregroundStyle(Theme.lime)
+                        Text(camera.error ?? "Kamera wird gestartet …")
+                            .font(.system(size: 14)).multilineTextAlignment(.center).foregroundStyle(Theme.muted)
+                        if camera.permissionDenied {
+                            Button("Kamera erlauben") {
+                                if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) }
+                            }.font(.subheadline.bold())
+                        } else if camera.error != nil {
+                            Button("Kamera neu starten") { startMode() }.font(.subheadline.bold())
                         }
                     }.padding(28)
-                }
-                if camera.ready {
-                    RoundedRectangle(cornerRadius: 22).stroke(Theme.ivory.opacity(0.65), style: StrokeStyle(lineWidth: 1, dash: [25, 170]))
-                        .frame(width: 245, height: mode == .barcode ? 150 : 235)
+                } else {
                     VStack {
+                        HStack {
+                            Label(mode == .barcode ? "LIVE SCAN" : "FOOD CAMERA", systemImage: "circle.fill")
+                                .font(.system(size: 9, weight: .bold)).tracking(1.5)
+                                .padding(12).background(.black.opacity(0.4), in: Capsule())
+                            Spacer()
+                            if camera.hasTorch {
+                                Button { camera.toggleTorch() } label: {
+                                    Image(systemName: camera.torchOn ? "flashlight.on.fill" : "flashlight.off.fill")
+                                        .frame(width: 44, height: 44).background(.black.opacity(0.4), in: Circle())
+                                }.accessibilityLabel(camera.torchOn ? "Taschenlampe ausschalten" : "Taschenlampe einschalten")
+                            }
+                        }.foregroundStyle(Theme.lime)
                         Spacer()
-                        Text(mode == .barcode ? "Barcode ruhig ins Bild halten" : "Deine ganze Mahlzeit ins Bild")
-                            .font(.system(size: 12, weight: .medium)).padding(.horizontal, 14).padding(.vertical, 9).background(.black.opacity(0.5), in: Capsule()).padding(.bottom, 18)
-                    }
+                        Image(systemName: "viewfinder").resizable().fontWeight(.ultraLight)
+                            .foregroundStyle(Theme.lime).frame(width: 225, height: mode == .barcode ? 130 : 225)
+                            .accessibilityHidden(true)
+                        Spacer()
+                        Text(mode == .barcode ? "Etwas Abstand halten · Barcode zentrieren" : "Deine ganze Mahlzeit ins Bild")
+                            .font(.system(size: 11, weight: .medium)).padding(.horizontal, 14).padding(.vertical, 10)
+                            .background(.black.opacity(0.6), in: Capsule())
+                    }.padding(16)
                 }
-            }.clipShape(RoundedRectangle(cornerRadius: 28)).frame(minHeight: 230, maxHeight: .infinity)
+            }.frame(minHeight: 240, maxHeight: .infinity).clipShape(RoundedRectangle(cornerRadius: 26))
             if mode == .photo {
                 if !aiReady { connectButton }
                 HStack {
-                    PhotosPicker(selection: $photo, matching: .images, photoLibrary: .shared()) { Image(systemName: "photo.on.rectangle").font(.system(size: 23)).frame(width: 56, height: 56) }.disabled(!aiReady).accessibilityLabel("Foto auswählen")
+                    PhotosPicker(selection: $photo, matching: .images, photoLibrary: .shared()) {
+                        Image(systemName: "photo.on.rectangle").font(.system(size: 21)).frame(width: 52, height: 52)
+                            .background(Theme.card, in: Circle())
+                    }.disabled(!aiReady).accessibilityLabel("Foto auswählen")
                     Spacer()
                     Button {
                         guard aiReady else { keySheet = true; return }
                         camera.capture()
-                    } label: { Circle().fill(Theme.ivory).frame(width: 66, height: 66).padding(5).overlay(Circle().stroke(Theme.ivory.opacity(0.5), lineWidth: 2)) }
-                        .buttonStyle(PressStyle()).disabled(!camera.ready).accessibilityLabel("Foto aufnehmen und erfassen")
-                    Spacer(); Color.clear.frame(width: 56, height: 56)
+                    } label: {
+                        Circle().fill(Theme.lime).frame(width: 60, height: 60).padding(6)
+                            .overlay(Circle().stroke(Theme.lime.opacity(0.45), lineWidth: 2))
+                    }.buttonStyle(PressStyle()).disabled(!camera.ready).accessibilityLabel("Foto aufnehmen und erfassen")
+                    Spacer(); Color.clear.frame(width: 52, height: 52)
                 }
-                Text("Foto → KI-Schätzung → eingetragen.").font(.system(size: 12)).foregroundStyle(Theme.muted)
+                Text("Foto machen. Nährwerte schätzen. Weiter geht’s.").font(.system(size: 11)).foregroundStyle(Theme.muted)
             } else {
-                Label("Erkannte Produkte werden sofort erfasst.", systemImage: "bolt.fill").font(.system(size: 13)).foregroundStyle(Theme.cyan).padding(.vertical, 10)
-                Text("Open Food Facts · Menge danach jederzeit anpassbar.").font(.system(size: 10)).foregroundStyle(Theme.muted)
+                Button { typedBarcode = ""; barcodeSheet = true } label: {
+                    Label("Barcode eingeben", systemImage: "keyboard").font(.system(size: 15, weight: .semibold))
+                        .frame(maxWidth: .infinity).padding(17).background(Theme.card, in: RoundedRectangle(cornerRadius: 18))
+                }.accessibilityIdentifier("scanner.enterBarcode")
+                Text("Ohne KI · Produktdaten von Open Food Facts\nErkannte Produkte werden direkt eingetragen.")
+                    .font(.system(size: 10)).foregroundStyle(Theme.muted).multilineTextAlignment(.center)
             }
         }.padding(.horizontal, 22).padding(.bottom, 20)
+    }
+    private var barcodeEntry: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    TextField("Ziffern unter dem Barcode", text: $typedBarcode).keyboardType(.numberPad)
+                        .accessibilityIdentifier("scanner.code").onChange(of: typedBarcode) { _, value in typedBarcode = String(value.prefix(14)) }
+                } header: { Text("Produktbarcode") } footer: {
+                    Text("8, 12, 13 oder 14 Ziffern. Du findest sie direkt unter den Strichen auf der Verpackung.")
+                }
+                Section {
+                    Button("Produkt suchen") {
+                        guard let code = Barcode.normalized(typedBarcode) else { return }
+                        barcodeSheet = false
+                        scan(code)
+                    }.disabled(Barcode.normalized(typedBarcode) == nil).accessibilityIdentifier("scanner.lookup")
+                }
+            }.scrollContentBackground(.hidden).aurixScreen().keyboardDone()
+                .navigationTitle("Barcode eingeben").navigationBarTitleDisplayMode(.inline)
+                .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Abbrechen") { barcodeSheet = false } } }
+        }.presentationDetents([.medium, .large])
     }
     private var voiceContent: some View {
         ScrollView {
             VStack(spacing: 24) {
                 Text("Sag einfach,\nwas du gegessen hast.").font(.system(size: 29, weight: .medium, design: .rounded)).multilineTextAlignment(.center).padding(.top, 20)
                 ZStack {
-                    Circle().fill(Theme.cyan.opacity(0.07)).frame(width: 144, height: 144)
-                    Image(systemName: speech.recording ? "waveform" : "mic").font(.system(size: 43, weight: .light)).foregroundStyle(Theme.cyan)
+                    Circle().fill(Theme.lime.opacity(0.07)).frame(width: 144, height: 144)
+                    Image(systemName: speech.recording ? "waveform" : "mic").font(.system(size: 43, weight: .light)).foregroundStyle(Theme.lime)
                         .symbolEffect(.pulse, options: .repeating, isActive: speech.recording && !reduceMotion)
                 }
                 if !aiReady { connectButton }
@@ -208,14 +273,11 @@ struct CaptureView: View {
     }
     private var connectButton: some View {
         Button { keySheet = true } label: {
-            HStack { Image(systemName: "sparkles"); Text("KI einmal verbinden"); Spacer(); Image(systemName: "arrow.right") }.font(.system(size: 14, weight: .medium)).padding(16).background(Theme.cyan.opacity(0.09), in: RoundedRectangle(cornerRadius: 16))
+            HStack { Image(systemName: "sparkles"); Text("KI einmal verbinden"); Spacer(); Image(systemName: "arrow.right") }.font(.system(size: 14, weight: .medium)).padding(16).background(Theme.lime.opacity(0.09), in: RoundedRectangle(cornerRadius: 16))
         }
     }
     private func startMode() {
-        #if DEBUG
-        if ProcessInfo.processInfo.arguments.contains("-screenshots-dashboard") { return }
-        #endif
-        guard phase == .active else { return }
+        guard phase == .active, !keySheet, !mealsSheet, !barcodeSheet else { return }
         if mode == .photo { camera.start(.photo) }
         if mode == .barcode { camera.start(.barcode) }
     }
@@ -256,14 +318,18 @@ struct CaptureView: View {
         }
     }
     private func scan(_ code: String) {
-        guard !busy, mode == .barcode, phase == .active else { return }
-        busy = true; busyLabel = "Produkt wird erkannt …"; unknownBarcode = code
+        guard !busy, error == nil, mode == .barcode, phase == .active else { return }
+        guard let code = Barcode.normalized(code) else { error = ProductLookupError.invalidBarcode.localizedDescription; return }
+        busy = true; busyLabel = "Produkt wird gesucht …"; unknownBarcode = code
+        camera.stop()
         let run = UUID(); operation = run
         let targetSlot = slot
         task = Task {
             defer { if operation == run { busy = false } }
             do {
-                if let saved = store.meals.first(where: { $0.barcode == code }) {
+                try Task.checkCancellation()
+                guard operation == run else { return }
+                if let saved = store.meals.first(where: { $0.barcode.flatMap(Barcode.normalized) == code }) {
                     if store.add(saved.entry(date: date, slot: targetSlot)) { close() }
                     return
                 }
@@ -291,11 +357,12 @@ private struct ManualCaptureForm: View {
     @State private var portion = "1 Portion"
     @State private var nutrition = Nutrition.zero
     @State private var saveMeal = false
+    @FocusState private var inputFocused: Bool
     var body: some View {
         Form {
             Section {
-                TextField("Was hast du gegessen?", text: $name).submitLabel(.done)
-                TextField("Menge / Portion", text: $portion).submitLabel(.done)
+                TextField("Was hast du gegessen?", text: $name).submitLabel(.done).focused($inputFocused).onSubmit { inputFocused = false }
+                TextField("Menge / Portion", text: $portion).submitLabel(.done).focused($inputFocused).onSubmit { inputFocused = false }
             }
             Section("Nährwerte für deine Portion") {
                 NumberField(title: "Kalorien", value: $nutrition.calories, unit: "kcal")
