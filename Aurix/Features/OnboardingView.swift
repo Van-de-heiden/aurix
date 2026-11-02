@@ -17,7 +17,7 @@ struct OnboardingView: View {
                 WelcomeBackdrop()
                 welcome
             } else {
-                LinearGradient(colors: [Theme.cyan.opacity(0.055), .clear], startPoint: .topLeading, endPoint: .center)
+                LinearGradient(colors: [Theme.lime.opacity(0.055), .clear], startPoint: .topLeading, endPoint: .center)
                     .ignoresSafeArea().allowsHitTesting(false)
                 questionnaire
             }
@@ -25,13 +25,31 @@ struct OnboardingView: View {
         .aurixScreen()
     }
     private var welcome: some View {
-        VStack(spacing: 0) {
-            Brand(large: true).padding(.top, 30).frame(maxWidth: .infinity)
-            Spacer()
-            Text("Food fuels\nmore than just today.").font(.system(size: 21, weight: .regular)).multilineTextAlignment(.center).lineSpacing(4).padding(.bottom, 30)
-            PrimaryButton(title: "Los geht’s") { advance() }.accessibilityIdentifier("onboarding.start")
-            Text("Nur du. Dein Ziel. AURIX.").font(.system(size: 12)).foregroundStyle(Theme.muted).frame(maxWidth: .infinity).padding(.top, 16)
-        }.padding(.horizontal, 28).padding(.bottom, 20)
+        GeometryReader { geometry in
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    HStack { Brand(); Spacer(); Text("01 / DEIN START").font(.system(size: 8, weight: .bold)).tracking(1).foregroundStyle(Theme.muted) }.padding(.top, 16)
+                    Spacer(minLength: 24)
+                    FuelMark().fill(Theme.lime).frame(width: 120, height: 120).padding(.bottom, 32)
+                    Text("GUT ESSEN.\nWEITER\nKOMMEN.")
+                        .font(.system(size: 51, weight: .black, design: .rounded)).italic().tracking(-2.3)
+                        .lineSpacing(-3).fixedSize(horizontal: false, vertical: true)
+                        .accessibilityLabel("Gut essen. Weiterkommen.")
+                    Text("Dein Essen. Deine Energie. Dein Fortschritt.")
+                        .font(.system(size: 15)).foregroundStyle(Theme.muted).padding(.top, 20)
+                    HStack(spacing: 16) {
+                        Label("Foto", systemImage: "camera")
+                        Label("Scan", systemImage: "barcode.viewfinder")
+                        Label("Sprache", systemImage: "waveform")
+                    }.font(.system(size: 11, weight: .medium)).foregroundStyle(Theme.lime).padding(.top, 24)
+                    Spacer(minLength: 32)
+                    PrimaryButton(title: "Los geht’s") { advance() }.accessibilityIdentifier("onboarding.start")
+                    Text("FUEL YOUR EVERYDAY").font(.system(size: 9, weight: .bold)).tracking(2.4)
+                        .foregroundStyle(Theme.muted).frame(maxWidth: .infinity).padding(.top, 20)
+                }.padding(.horizontal, 26).padding(.bottom, 24)
+                    .frame(minHeight: geometry.size.height)
+            }.scrollIndicators(.hidden)
+        }
     }
     private var questionnaire: some View {
         VStack(spacing: 20) {
@@ -39,20 +57,20 @@ struct OnboardingView: View {
                 Button { nameFocused = false; withAnimation(stepAnimation) { step -= 1 } } label: { Image(systemName: "arrow.left").frame(width: 44, height: 44) }.accessibilityLabel("Zurück")
                 Spacer(); Text("\(step) / \(lastStep)").font(.system(size: 12, weight: .medium)).monospacedDigit().foregroundStyle(Theme.muted)
             }
-            ProgressView(value: Double(step), total: Double(lastStep)).tint(Theme.cyan)
+            ProgressView(value: Double(step), total: Double(lastStep)).tint(Theme.lime)
             ScrollView {
                 VStack(alignment: .leading, spacing: 26) {
-                    Text(eyebrow).font(.system(size: 10, weight: .semibold)).tracking(2.5).foregroundStyle(Theme.cyan)
-                    Text(title).font(.system(size: 34, weight: .medium, design: .rounded)).tracking(-0.8).fixedSize(horizontal: false, vertical: true)
+                    Text(eyebrow).font(.system(size: 10, weight: .semibold)).tracking(2.5).foregroundStyle(Theme.lime)
+                    Text(title).font(.system(size: 34, weight: .bold, design: .rounded)).tracking(-0.8).fixedSize(horizontal: false, vertical: true)
                     content
                 }.frame(maxWidth: .infinity, alignment: .leading).padding(.top, 14).padding(.bottom, 20)
                     .id(step).transition(.opacity)
             }.scrollDismissesKeyboard(.interactively)
-            PrimaryButton(title: step == lastStep ? "Mein nächstes Kapitel" : "Weiter", disabled: !canAdvance) { advance() }
+            PrimaryButton(title: step == lastStep ? "DAYFUEL starten" : "Weiter", disabled: !canAdvance) { advance() }
                 .accessibilityIdentifier("onboarding.next")
         }.padding(.horizontal, 26).padding(.bottom, 18)
     }
-    private var eyebrow: String { step == lastStep ? "DEIN AUSGANGSPUNKT" : "DEIN WEG BEGINNT HIER" }
+    private var eyebrow: String { step == lastStep ? "DEIN AUSGANGSPUNKT" : "DEIN PERSÖNLICHES SETUP" }
     private var title: String {
         switch step {
         case 1: return "Wie heisst du?"
@@ -99,7 +117,7 @@ struct OnboardingView: View {
         default:
             let goals = profile.goals
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                goalTile("Kalorien", Int(goals.calories), "kcal", Theme.cyan)
+                goalTile("Kalorien", Int(goals.calories), "kcal", Theme.lime)
                 goalTile("Protein", Int(goals.protein), "g", Theme.protein)
                 goalTile("Carbs", Int(goals.carbs), "g", Theme.carbs)
                 goalTile("Fette", Int(goals.fat), "g", Theme.fat)
@@ -111,19 +129,19 @@ struct OnboardingView: View {
     private func choice(_ text: String, detail: String, icon: String, selected: Bool, action: @escaping () -> Void) -> some View {
         Button { withAnimation(reduceMotion ? nil : .snappy(duration: 0.2)) { action() }; UISelectionFeedbackGenerator().selectionChanged() } label: {
             HStack(spacing: 16) {
-                Image(systemName: icon).font(.system(size: 22)).frame(width: 30).foregroundStyle(selected ? Theme.cyan : Theme.muted)
+                Image(systemName: icon).font(.system(size: 22)).frame(width: 30).foregroundStyle(selected ? Theme.lime : Theme.muted)
                 VStack(alignment: .leading, spacing: 5) { Text(text).font(.system(size: 17, weight: .semibold)); Text(detail).font(.system(size: 12)).foregroundStyle(Theme.muted).multilineTextAlignment(.leading) }
                 Spacer(minLength: 0)
-                Image(systemName: selected ? "checkmark.circle.fill" : "circle").foregroundStyle(selected ? Theme.cyan : Theme.muted.opacity(0.4))
+                Image(systemName: selected ? "checkmark.circle.fill" : "circle").foregroundStyle(selected ? Theme.lime : Theme.muted.opacity(0.4))
             }.padding(20).frame(maxWidth: .infinity, alignment: .leading).background(Theme.card.opacity(0.94), in: RoundedRectangle(cornerRadius: 22))
-                .overlay(RoundedRectangle(cornerRadius: 22).stroke(selected ? Theme.cyan.opacity(0.7) : .clear, lineWidth: 1))
+                .overlay(RoundedRectangle(cornerRadius: 22).stroke(selected ? Theme.lime.opacity(0.7) : .clear, lineWidth: 1))
         }.buttonStyle(PressStyle()).foregroundStyle(Theme.ivory).accessibilityAddTraits(selected ? .isSelected : [])
     }
     private func wheel(value: Binding<Double>, values: [Double], unit: String) -> some View {
         VStack(spacing: 14) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Text(value.wrappedValue, format: .number.precision(.fractionLength(0))).font(.system(size: 62, weight: .light, design: .rounded)).monospacedDigit()
-                Text(unit).foregroundStyle(Theme.cyan).font(.title3)
+                Text(unit).foregroundStyle(Theme.lime).font(.title3)
             }.frame(maxWidth: .infinity)
             Picker(unit, selection: value) {
                 ForEach(values, id: \.self) { number in Text(number.formatted(.number.precision(.fractionLength(0))) + " " + unit).tag(number) }
@@ -153,21 +171,16 @@ struct OnboardingView: View {
 }
 
 private struct WelcomeBackdrop: View {
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var revealed = false
-
     var body: some View {
         GeometryReader { geometry in
-            Image("Summit").resizable().scaledToFill()
-                .frame(width: geometry.size.width, height: geometry.size.height).clipped()
-                .scaleEffect(revealed && !reduceMotion ? 1.015 : 1)
-                .overlay {
-                    LinearGradient(colors: [.black.opacity(0.12), .clear, Theme.background.opacity(0.6)], startPoint: .top, endPoint: .bottom)
-                }
-        }
-        .ignoresSafeArea().allowsHitTesting(false).accessibilityHidden(true)
-        // A short, isolated entrance: no ongoing full-screen animation behind pickers.
-        .onAppear { withAnimation(reduceMotion ? nil : .easeOut(duration: 1.2)) { revealed = true } }
+            ZStack(alignment: .topTrailing) {
+                Theme.background
+                FuelMark().fill(Theme.lime.opacity(0.035))
+                    .frame(width: geometry.size.width * 1.8, height: geometry.size.height * 0.8)
+                    .rotationEffect(.degrees(8)).offset(x: geometry.size.width * 0.7, y: 10)
+                LinearGradient(colors: [.clear, Theme.background], startPoint: .top, endPoint: .bottom)
+            }
+        }.ignoresSafeArea().allowsHitTesting(false).accessibilityHidden(true)
     }
 }
 
@@ -181,7 +194,7 @@ struct WeightSelection: View {
                 Text(value, format: .number.precision(.fractionLength(1)))
                     .font(.system(size: 62, weight: .light, design: .rounded)).monospacedDigit()
                     .minimumScaleFactor(0.7).lineLimit(1)
-                Text("kg").foregroundStyle(Theme.cyan).font(.title3)
+                Text("kg").foregroundStyle(Theme.lime).font(.title3)
             }.frame(maxWidth: .infinity)
             KilogramWheel(value: $value, range: range).frame(height: 190)
         }.padding(.vertical, 18).background(Theme.card, in: RoundedRectangle(cornerRadius: 26))

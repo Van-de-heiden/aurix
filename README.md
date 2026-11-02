@@ -1,6 +1,8 @@
-# AURIX
+# DAYFUEL
 
-**Food fuels more than just today.**
+**Fuel your everyday.**
+
+DAYFUEL ist der Rework von Aurix: eine klare, sportliche Marke mit Graphit, Lime und einer nativen iPhone-Oberfläche. Version 2.0 behält Bundle-ID, Schlüsselbund und lokale Tagebücher bei. Projekt und Core-Modul heissen aus Kompatibilitätsgründen weiterhin Aurix.
 
 A personal, native iPhone nutrition tracker. SwiftUI, iOS 17+, no paid dependencies or required backend.
 
@@ -18,15 +20,16 @@ Kamera, Barcode und Mikrofon auf dem echten iPhone testen. Der Simulator unterst
 
 ## Funktionen
 
-- Atmosphärischer Berg-Start, eigens erstelltes AURIX-Icon.
+- Neues DAYFUEL-Branding mit reproduzierbarem Vektorzeichen und App-Icon.
+- Kompakte Nährwertkarten, schneller Foto-/Scan-Einstieg, überarbeitete Meals und Verlauf.
 - Onboarding mit einer Frage pro Bildschirm, Auswahlkarten, Zahlenrädern, sanften Übergängen und Rücknavigation.
-- Vier gleich grosse Anzeigen für Kalorien, Protein, Carbs und Fette.
+- Vier gleich grosse Anzeigen für Kalorien, Protein, Carbs und Fette mit linearem Tagesfortschritt.
 - Morgengewicht mit zwei Rollen (ganze kg + `.0` / `.5`), Bauchumfang mit Dezimaleingabe. Schnellzugriff direkt auf Heute; täglich bzw. nach sieben Tagen hervorgehoben.
 - **Verlauf:** native Swift-Charts-Diagramme für Gewicht und Bauchumfang, 4 Wochen / 3 Monate / gesamter Verlauf. Tagespunkte, 7-Tage-Mittel aus vorhandenen Messungen, Veränderung im Zeitraum und bearbeitbare Historie. Keine erfundenen Werte für ausgelassene Tage.
 - Messwerte rückwirkend erfassen, bearbeiten und löschen. Ein Wert je Messart und Kalendertag; erneutes Speichern ersetzt denselben Tag. Bestehende Kalorienziele bleiben unverändert.
 - Tagebuch mit Morgenessen, Mittagessen, Abendessen und Snacks. Rückwirkende Einträge und Kalenderauswahl.
 - **Foto:** verkleinern, Metadaten entfernen, OpenAI-Schätzung direkt speichern.
-- **Barcode:** Open Food Facts abfragen, automatisch eine ganze Einzelpackung bzw. deklarierte Portion erfassen. Mehrfachpackungen werden separat berücksichtigt. Fehlt eine Portionsgrösse, explizit gekennzeichnete 100-g/ml-Standardmenge.
+- **Barcode:** EAN-8/13, UPC-E und GTIN-14 lesen, Prüfziffer prüfen, UPC-A/EAN-Schreibweisen vereinheitlichen, Taschenlampe und manuelle Barcode-Eingabe. Open Food Facts abfragen, automatisch eine ganze Einzelpackung bzw. deklarierte Portion erfassen. Mehrfachpackungen werden separat berücksichtigt. Fehlt eine Portionsgrösse, explizit gekennzeichnete 100-g/ml-Standardmenge.
 - **Sprache:** Apple-Spracherkennung (`de-CH`, auf dem Gerät wenn unterstützt), daraus KI-Meal; alternativ Beschreibung tippen.
 - **Manuell:** Name, Portion und vier Nährwerte. Eigene Meals, Wiederholen, Bearbeiten, Löschen und schnelle Mengenfaktoren.
 - Unbekanntes Barcode-Produkt einmal manuell hinterlegen und künftig wiedererkennen.
@@ -79,4 +82,4 @@ Das fertige Xcode-Projekt ist eingecheckt. Nach Änderungen an der Dateistruktur
 
 ## Design
 
-Midnight, warme Elfenbeintöne und dezentes Cyan. Die Landschaft prägt den Start; die Einführung nutzt danach einen ruhigen Verlauf, kurze Übergänge und native Gewichtsrollen für ganze Kilos plus `.0` / `.5`. Im Alltag bestimmen Ziele und Mahlzeiten die Oberfläche. Die vier Hauptbereiche sind über Apples native Tableiste erreichbar. Bewegung respektiert „Bewegung reduzieren“. Eigene generierte Markenassets sind direkt in den Asset-Katalog eingebunden. Die Herkunft und Gestaltungsbriefings stehen in `docs/design.md`.
+Graphit, Lime, gebrochenes Weiss und eigene Akzente für Protein, Carbs und Fette. Drei nach vorne geschnittene Formen bilden das neue Zeichen. Der Einstieg verwendet dieselbe Vektorgeometrie wie das App-Icon. Dashboard, Erfassung, Meals, Messwerte und Einstellungen teilen sich Typografie, Karten und Farben. Die vier Hauptbereiche bleiben in der nativen Tableiste; Bewegung respektiert „Bewegung reduzieren“. Details: [Design](docs/design.md), [Rework und Prüfgrenzen](docs/rework-2026-11-02.md).

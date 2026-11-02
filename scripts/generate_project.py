@@ -51,7 +51,7 @@ coreLink = obj('core-link', 'PBXBuildFile', productRef=productDep)
 
 shared = dict(SWIFT_VERSION='5.0', IPHONEOS_DEPLOYMENT_TARGET='17.0', SDKROOT='iphoneos',
               TARGETED_DEVICE_FAMILY='1', SUPPORTED_PLATFORMS='iphoneos iphonesimulator',
-              CODE_SIGN_STYLE='Automatic', CURRENT_PROJECT_VERSION='2', MARKETING_VERSION='1.1',
+              CODE_SIGN_STYLE='Automatic', CURRENT_PROJECT_VERSION='3', MARKETING_VERSION='2.0',
               CLANG_ENABLE_MODULES='YES', ENABLE_USER_SCRIPT_SANDBOXING='YES')
 appsettings = dict(shared, PRODUCT_NAME='$(TARGET_NAME)', PRODUCT_BUNDLE_IDENTIFIER='ch.mauruspichler.aurix',
                    GENERATE_INFOPLIST_FILE='NO', INFOPLIST_FILE='Aurix/Resources/Info.plist',
@@ -105,13 +105,13 @@ def reference(target, product, name):
  <AnalyzeAction buildConfiguration="Debug"/><ArchiveAction buildConfiguration="Release" revealArchiveInOrganizer="YES"/>
 </Scheme>''')
 
-infoData=dict(CFBundleDevelopmentRegion='de',CFBundleDisplayName='AURIX',CFBundleExecutable='$(EXECUTABLE_NAME)',
+infoData=dict(CFBundleDevelopmentRegion='de',CFBundleDisplayName='DAYFUEL',CFBundleExecutable='$(EXECUTABLE_NAME)',
     CFBundleIdentifier='$(PRODUCT_BUNDLE_IDENTIFIER)',CFBundleInfoDictionaryVersion='6.0',CFBundleName='$(PRODUCT_NAME)',
     CFBundlePackageType='APPL',CFBundleShortVersionString='$(MARKETING_VERSION)',CFBundleVersion='$(CURRENT_PROJECT_VERSION)',
     LSRequiresIPhoneOS=True,UILaunchScreen={},UISupportedInterfaceOrientations=['UIInterfaceOrientationPortrait'],
-    UIUserInterfaceStyle='Dark',NSCameraUsageDescription='AURIX fotografiert deine Mahlzeit oder scannt einen Lebensmittel-Barcode, wenn du die Erfassung öffnest.',
-    NSMicrophoneUsageDescription='Beschreibe deine Mahlzeit mit deiner Stimme. AURIX speichert keine Audiodatei.',
-    NSSpeechRecognitionUsageDescription='AURIX wandelt deine Mahlzeitenbeschreibung in Text um. Falls nötig verarbeitet Apple die Aufnahme.',
+    UIUserInterfaceStyle='Dark',NSCameraUsageDescription='DAYFUEL fotografiert deine Mahlzeit oder scannt einen Lebensmittel-Barcode, wenn du die Erfassung öffnest.',
+    NSMicrophoneUsageDescription='Beschreibe deine Mahlzeit mit deiner Stimme. DAYFUEL speichert keine Audiodatei.',
+    NSSpeechRecognitionUsageDescription='DAYFUEL wandelt deine Mahlzeitenbeschreibung in Text um. Falls nötig verarbeitet Apple die Aufnahme.',
     ITSAppUsesNonExemptEncryption=False)
 (ROOT/'Aurix/Resources/Info.plist').write_bytes(plistlib.dumps(infoData,sort_keys=False))
 privacyData=dict(NSPrivacyTracking=False,NSPrivacyTrackingDomains=[],NSPrivacyCollectedDataTypes=[],

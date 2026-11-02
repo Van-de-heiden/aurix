@@ -21,8 +21,13 @@ final class AurixUITests: XCTestCase {
         XCTAssertGreaterThan(tabs.frame.minY, app.frame.height * 0.8)
         XCTAssertGreaterThan(tabs.frame.maxY, app.frame.maxY - 60)
         capture("03-dashboard")
+        app.buttons["Einstellungen"].tap()
+        XCTAssertTrue(app.navigationBars["Einstellungen"].waitForExistence(timeout: 5))
+        capture("14-settings")
+        app.navigationBars["Einstellungen"].buttons["Fertig"].tap()
         tabs.buttons["Meine Meals"].tap()
         XCTAssertTrue(app.navigationBars["Meine Meals"].waitForExistence(timeout: 5))
+        capture("13-meals")
         tabs.buttons["Erfassen"].tap()
         XCTAssertTrue(app.buttons["capture.Manuell"].waitForExistence(timeout: 5))
         app.buttons["capture.Manuell"].tap()
@@ -30,7 +35,8 @@ final class AurixUITests: XCTestCase {
         let name = app.textFields["Was hast du gegessen?"]
         XCTAssertTrue(name.waitForExistence(timeout: 5))
         name.tap(); name.typeText("Test Meal")
-        if app.buttons["Fertig"].exists { app.buttons["Fertig"].firstMatch.tap() }
+        if let done = app.buttons.matching(identifier: "Fertig").allElementsBoundByIndex.first(where: { $0.isHittable }) { done.tap() }
+        else { name.typeText("\n") }
         let save = app.buttons["Jetzt erfassen"]
         if !save.isHittable { app.swipeUp() }
         save.tap()
@@ -40,7 +46,10 @@ final class AurixUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Test Meal"].firstMatch.waitForExistence(timeout: 5))
         capture("05-saved")
         tabs.buttons["Meine Meals"].tap()
-        app.staticTexts["Test Meal"].firstMatch.tap()
+        let repeated = app.staticTexts["Test Meal"].firstMatch
+        for _ in 0..<3 where !repeated.exists || !repeated.isHittable { app.swipeUp() }
+        XCTAssertTrue(repeated.waitForExistence(timeout: 5))
+        repeated.tap()
         XCTAssertTrue(app.buttons["Rückgängig"].waitForExistence(timeout: 5))
         app.buttons["Rückgängig"].tap()
         // The slot-specific shortcut still opens capture as a dismissible sheet.
@@ -138,6 +147,7 @@ final class AurixUITests: XCTestCase {
         app.segmentedControls["progress.range"].buttons["Alle"].tap()
         // 42 historic values + today's value; re-saving today creates no duplicate.
         let count = app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] %@", "Messwerte · 43")).firstMatch
+        if !count.exists { app.swipeUp() }
         XCTAssertTrue(count.waitForExistence(timeout: 5))
         app.segmentedControls["progress.metric"].buttons["Bauchumfang"].tap()
         capture("09-waist-progress")
@@ -161,7 +171,40 @@ final class AurixUITests: XCTestCase {
         app.buttons["Abbrechen"].tap()
         app.tabBars.buttons["Verlauf"].tap()
         app.segmentedControls["progress.range"].buttons["Alle"].tap()
-        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] %@", "Messwerte · 42")).firstMatch.waitForExistence(timeout: 5))
+        let remaining = app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] %@", "Messwerte · 42")).firstMatch
+        if !remaining.exists { app.swipeUp() }
+        XCTAssertTrue(remaining.waitForExistence(timeout: 5))
+    }
+    func testBarcodeFallbackFindsSavedUPCAProductAndCanReopen() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-uitest-scanner"]
+        app.launch()
+        let scan = app.buttons["dashboard.scan"]
+        XCTAssertTrue(scan.waitForExistence(timeout: 10))
+        if !scan.isHittable { app.swipeUp() }
+        scan.tap()
+        XCTAssertTrue(app.buttons["scanner.enterBarcode"].waitForExistence(timeout: 5))
+        capture("11-scanner")
+        app.buttons["scanner.enterBarcode"].tap()
+        let input = app.textFields["scanner.code"]
+        XCTAssertTrue(input.waitForExistence(timeout: 5))
+        input.tap(); input.typeText("123")
+        XCTAssertFalse(app.buttons["scanner.lookup"].isEnabled)
+        input.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 3))
+        input.typeText("0036000291452")
+        XCTAssertTrue(app.buttons["scanner.lookup"].isEnabled)
+        capture("12-barcode-entry")
+        app.buttons["scanner.lookup"].tap()
+        XCTAssertTrue(app.tabBars.firstMatch.waitForExistence(timeout: 5))
+        app.swipeUp()
+        XCTAssertTrue(app.staticTexts["Scanner Test Drink"].firstMatch.waitForExistence(timeout: 5))
+        app.tabBars.buttons["Erfassen"].tap()
+        app.buttons["capture.Barcode"].tap()
+        XCTAssertTrue(app.buttons["scanner.enterBarcode"].waitForExistence(timeout: 5))
+        app.buttons["capture.Manuell"].tap()
+        XCTAssertTrue(app.textFields["Was hast du gegessen?"].waitForExistence(timeout: 5))
+        app.buttons["capture.Barcode"].tap()
+        XCTAssertTrue(app.buttons["scanner.enterBarcode"].exists)
     }
     private func capture(_ name: String) {
         let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())

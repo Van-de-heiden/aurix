@@ -1,31 +1,35 @@
-# AURIX — Designentscheidungen
+# DAYFUEL — Design 2.0
 
-Die App wird nur für ihren Besitzer gebaut. Vier gleichwertige Meter, schnelle Erfassung, wenige Oberflächenelemente. Keine Maskottchen. Bergwelt, Weite und warmes Horizontlicht bilden den Markenraum. Morgenessen / Mittagessen / Abendessen / Snacks sind sichtbar, die Zuordnung ist per Uhrzeit vorausgewählt und manuell änderbar.
+## Marke
 
-Das Bergmotiv wurde mit dem eingebauten Imagegen erstellt. Das finale Logo wurde auf ausdrücklichen Nutzerwunsch aus seiner hochgeladenen AURIX-Referenz mit Imagegen freigestellt und originalgetreu nachgebildet: cyanblaues A mit gerundetem Gipfel und geschwungenem Einschnitt. Die App verwendet diese verbindliche Referenzform. Für den Asset-Katalog wurden Format, Abmessungen und beim App-Icon der notwendige deckende Hintergrund angepasst:
+DAYFUEL verbindet tägliches Essen mit Energie und persönlichem Fortschritt. „Fuel your everyday“ ist die englische Markenlinie; die Bedienung bleibt auf Schweizer Hochdeutsch. Der vom Nutzer gewählte Stil ist klar und sportlich.
 
-- `Aurix/Resources/Assets.xcassets/Summit.imageset/summit.jpg`
-- `Aurix/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png`
-- `Aurix/Resources/Assets.xcassets/AppMark.imageset/mark.png` (kleine Variante desselben Icons)
+Das Zeichen besteht aus drei nach vorne geschnittenen Balken. Der mittlere ist höher: Bewegung und kontinuierlicher Fortschritt. `FuelMark` zeichnet die Geometrie direkt in SwiftUI. `scripts/generate_brand.swift` reproduziert daraus App-Icon (1024 px, deckend) und kleines Markenasset (256 px, transparent). Keine Schrift oder Landschaft im Icon; iOS rundet es selbst.
 
-## Bergmotiv-Briefing
+## Gestaltung
 
-Photorealistic cinematic portrait 1024×1536; vast dark alpine mountain summit at dawn, very small solitary human on a rocky peak, multiple ridges receding into valley mist, narrow warm golden horizon. Charcoal/midnight slate, muted cyan shadows, warm ivory sunlight. Top clean dark sky for app typography, near-black foreground for controls. No text, logo, UI, monk, mascot, neon beams or exaggerated effects.
+- Hintergrund: Graphit (sRGB 0.055 / 0.065 / 0.060).
+- Karten: dunkles Grün-Grau (0.100 / 0.115 / 0.105).
+- Primärer Akzent: Lime (0.82 / 0.98 / 0.39), dunkle Schrift auf Primärbuttons.
+- Text: gebrochenes Weiss; Sekundärtext mit klarer Abstufung.
+- Protein: Lavendel; Carbs: Apricot; Fette: Mint. Zahlen und Beschriftungen tragen Information auch ohne Farbe.
+- Wortmarke: fett, kursiv, eng. Überschriften: gerundete Systemschrift mit deutlicher Hierarchie. Zahlen: tabellarische Ziffern.
+- Kartenradien 17–26 pt, klare Abstände, kurze Übergänge. Keine dauerhafte Animation oder Warteinszenierung.
 
-## Icon-Briefing
+## Screens
 
-Exact source: the top-left A emblem in the user's AURIX brand board, repeated on the first phone. Preserve rounded summit, continuous sloping right leg, detached curved lower-left segment, and smooth swooping negative-space incision. Pale ice-cyan top to vivid sky-blue bottom gradient. Extract symbol only onto transparent background. No added ivory trail, conventional crossbar, words, landscape, frame, or shadow. SwiftUI renders the spaced light AURIX wordmark separately. The iOS icon composites the same mark on midnight; iOS supplies rounding.
+Onboarding: typografischer Einstieg mit grosser Aussage, danach ein Thema je Schritt. Native Gewichtsrollen und Zielberechnung bleiben erhalten.
 
-## Verhalten
+Heute: kompakter Markenheader, Datum, vier gleichwertige Nährwertkarten mit Fortschrittsbalken, direkter Foto- und Barcode-Einstieg, Körpermessungen und Mahlzeiten. Tages- und Kalendernavigation bleiben bedienbar. Ist und Ziel stehen immer sichtbar dabei; ein überschrittenes Ziel wird als Differenz angezeigt.
 
-Onboarding: ein Thema pro Schritt; Zahlenräder für Körperdaten, grosse Karten für Ziel/Aktivität, keine animierten Wartezeiten. Dashboard: 2×2 Meter gleicher Grösse mit klarer Ist/Ziel-Beschriftung; Füllstände animieren nur bei Wertänderung. Einträge werden unmittelbar gespeichert; Rückgängig bleibt kurz erreichbar. Streak misst aufeinanderfolgende Tage mit erfassten Mahlzeiten, nicht „gutes“ oder „schlechtes“ Essen.
+Erfassen: vier Modi bleiben sichtbar. Der Scanner hat ruhige Zielmarkierung, Taschenlampe und immer erreichbare Barcode-Eingabe. Fehler unterscheiden ungültige Nummer, unbekanntes Produkt, unvollständige Daten und Nichterreichbarkeit. Bekannte eigene Produkte funktionieren offline. Unbekannte Barcodes lassen sich einmal manuell hinterlegen. Ein Moduswechsel verwirft die alte Barcode-Zuordnung.
 
-Nach dem ersten Gerätetest: Das Bergmotiv bewegt sich nur kurz beim Einstieg. Die Fragen haben einen ruhigen Verlaufshintergrund und kurze Überblendungen (0.18 Sekunden, bei „Bewegung reduzieren“ ohne Animation). Gewicht und Zielgewicht verwenden einen nativen `UIPickerView` mit zwei Komponenten: ganze Kilogramm und `.0` / `.5`. UIKit erzeugt die sichtbaren Zeilen bei Bedarf. Der Bereich bleibt 40–200 kg; bei 200 kg entfällt `.5`.
+Meine Meals: eigene Suchzeile, klarer Hinzufügen-Button, gespeicherte Meals und letzte Mahlzeiten als Karten. Leere Bereiche und erfolglose Suchen erhalten verständliche Zustände. Bearbeiten und Löschen bleiben im Kontextmenü erreichbar.
 
-Die Hauptnavigation ist ein systemeigener `TabView` mit Heute, Erfassen, Meine Meals und Verlauf. iOS bestimmt Gestaltung, Abstände und die Position über dem Home-Indikator. Es gibt keine selbst gezeichnete Ersatzleiste. Eine Erfassung über den Tab führt nach dem Speichern zu Heute; die Plusknöpfe bei Mahlzeiten öffnen weiterhin eine schliessbare Erfassung. Beim Verlassen des Erfassen-Tabs werden Kamera, Mikrofon und laufende Analyse beendet und temporäre Daten freigegeben.
+Verlauf: native Segmente für Messart und Zeitraum, grosse letzte Messung, Veränderung, echte Tageswerte und 7-Tage-Mittel. Die Legende benennt Serien mit Text und Form. Kein Auffüllen fehlender Messungen.
 
-## Messwerte und Verlauf (1.1)
+Einstellungen: neues Zeichen und DAYFUEL-Texte einschliesslich Sicherungsexport, Berechtigungsbeschreibungen und Version. Das bestehende Speicherformat, Bundle-ID und Schlüsselbund bleiben kompatibel.
 
-Die vier gleichwertigen Tagesmeter sind kompakter; darunter steht eine einzige, zweigeteilte Karte für Gewicht und Bauchumfang. Keine zusätzliche Onboarding-Frage und keine Erinnerungspopups. Gewicht wird täglich hervorgehoben, Bauchumfang nach sieben Kalendertagen. Ein Tippen öffnet das native Formular mit dem letzten Wert; es wird erst beim Speichern eine Messung angelegt.
+## Technische Identität
 
-Der eigene Tab Verlauf enthält zwei Segmente für Messart und Zeitraum, eine kompakte Zusammenfassung, ein natives Swift-Charts-Diagramm und darunter die Messhistorie. Cyan markiert Tageswerte, eine helle Linie das gleitende Mittel vorhandener Werte innerhalb sieben Kalendertagen. Bei langen Historien werden höchstens 400 Punkte pro Serie gezeichnet; sämtliche Originalwerte bleiben erhalten und bearbeitbar. Die y-Achse zeigt Einheiten und einen an die Messwerte angepassten Bereich. Ein antippbarer Wert und die Liste ermöglichen die Korrektur ohne eine separate Verwaltungsebene. Messwerte verwenden denselben Zweikomponenten-Picker wie das Onboarding, hier mit dem gesamten gültigen Bereich 35–300 kg.
+`Aurix.xcodeproj`, Scheme `Aurix`, Modul `AurixCore`, `ch.mauruspichler.aurix`, der Application-Support-Ordner und der Schlüsselbunddienst behalten ihre technischen Namen. Ein Update ersetzt so die bisherige App und kann deren Daten weiter lesen. Die sichtbare App heisst DAYFUEL.

@@ -16,35 +16,50 @@ struct MealsView: View {
     }
     var body: some View {
         NavigationStack {
-            List {
-                Section {
-                    Button { editing = FoodEntry(name: "", nutrition: .zero, date: date, slot: slot) } label: { Label("Eigenes Meal erfassen", systemImage: "plus.circle") }
-                }
-                Section("Meine Meals") {
-                    if store.meals.isEmpty { Text("Speichere deine häufigsten Mahlzeiten. Danach reicht ein Tippen.").font(.subheadline).foregroundStyle(Theme.muted) }
-                    ForEach(store.meals.filter { matches($0.name) }) { meal in
-                        Button { if store.add(meal.entry(date: date, slot: slot)) { finishAdding() } } label: { row(meal.name, meal.nutrition, meal.portion) }
-                            .contextMenu {
-                                Button("Meal bearbeiten", systemImage: "pencil") { selectedMeal = meal }
-                                Button("Meal löschen", systemImage: "trash", role: .destructive) { store.deleteMeal(meal) }
-                            }
-                            .swipeActions {
-                                Button(role: .destructive) { store.deleteMeal(meal) } label: { Label("Löschen", systemImage: "trash") }
-                                Button { selectedMeal = meal } label: { Label("Bearbeiten", systemImage: "pencil") }.tint(Theme.cyan)
-                            }
+            ScrollView {
+                VStack(alignment: .leading, spacing: 22) {
+                    Text("DEINE FAVORITEN. EIN TIPP ENTFERNT.")
+                        .font(.system(size: 9, weight: .bold)).tracking(1.5).foregroundStyle(Theme.lime)
+                    HStack(spacing: 10) {
+                        Image(systemName: "magnifyingglass").foregroundStyle(Theme.muted)
+                        TextField("Deine Meals durchsuchen", text: $query).font(.system(size: 15))
+                            .submitLabel(.search)
+                        if !query.isEmpty { Button { query = "" } label: { Image(systemName: "xmark.circle.fill") }.accessibilityLabel("Suche leeren") }
+                    }.padding(16).background(Theme.card, in: RoundedRectangle(cornerRadius: 17))
+                    PrimaryButton(title: "Eigenes Meal erfassen", symbol: "plus") {
+                        editing = FoodEntry(name: "", nutrition: .zero, date: date, slot: slot)
                     }
-                }
-                Section("Noch einmal essen") {
-                    ForEach(recent) { old in
-                        Button {
-                            var entry = old; entry.id = UUID(); entry.date = date; entry.slot = slot
-                            if store.add(entry) { finishAdding() }
-                        } label: { row(old.name, old.nutrition, old.portion) }
+                    SectionHeading(title: "Gespeichert", detail: "\(store.meals.filter { matches($0.name) }.count) Meals")
+                    if store.meals.isEmpty {
+                        emptyState("Deine Basics, immer bereit.", detail: "Speichere, was du oft isst. Beim nächsten Mal reicht ein Tippen.", symbol: "square.stack.3d.up")
+                    } else if store.meals.filter({ matches($0.name) }).isEmpty {
+                        emptyState("Kein Treffer", detail: "Versuche einen anderen Namen.", symbol: "magnifyingglass")
                     }
-                    if recent.isEmpty { Text("Hier erscheinen deine letzten Mahlzeiten.").font(.subheadline).foregroundStyle(Theme.muted) }
-                }
-            }.listStyle(.insetGrouped).scrollContentBackground(.hidden).aurixScreen()
-                .searchable(text: $query, prompt: "Deine Meals durchsuchen")
+                    LazyVStack(spacing: 10) {
+                        ForEach(store.meals.filter { matches($0.name) }) { meal in
+                            Button { if store.add(meal.entry(date: date, slot: slot)) { finishAdding() } } label: { row(meal.name, meal.nutrition, meal.portion) }
+                                .buttonStyle(PressStyle())
+                                .contextMenu {
+                                    Button("Meal bearbeiten", systemImage: "pencil") { selectedMeal = meal }
+                                    Button("Meal löschen", systemImage: "trash", role: .destructive) { store.deleteMeal(meal) }
+                                }
+                                .accessibilityCustomContent("Aktionen", "Zum Bearbeiten oder Löschen gedrückt halten")
+                        }
+                    }
+                    SectionHeading(title: "Noch einmal essen", detail: "Zuletzt erfasst")
+                    LazyVStack(spacing: 10) {
+                        ForEach(recent) { old in
+                            Button {
+                                var entry = old; entry.id = UUID(); entry.date = date; entry.slot = slot
+                                if store.add(entry) { finishAdding() }
+                            } label: { row(old.name, old.nutrition, old.portion) }.buttonStyle(PressStyle())
+                        }
+                    }
+                    if recent.isEmpty {
+                        emptyState(query.isEmpty ? "Hier wird’s persönlich." : "Kein Treffer", detail: query.isEmpty ? "Deine letzten Mahlzeiten kannst du hier direkt wiederholen." : "Für diese Suche gibt es keine Mahlzeiten.", symbol: "clock.arrow.circlepath")
+                    }
+                }.padding(22)
+            }.scrollIndicators(.hidden).scrollDismissesKeyboard(.interactively).aurixScreen()
                 .navigationTitle("Meine Meals")
                 .toolbar {
                     if onEntryAdded == nil {
@@ -54,6 +69,15 @@ struct MealsView: View {
                 .sheet(item: $editing) { EntryEditor(entry: $0, isNew: true) }
                 .sheet(item: $selectedMeal) { SavedMealEditor(meal: $0) }
         }
+    }
+    private func emptyState(_ title: String, detail: String, symbol: String) -> some View {
+        HStack(alignment: .top, spacing: 14) {
+            Image(systemName: symbol).font(.system(size: 25, weight: .light)).foregroundStyle(Theme.lime)
+            VStack(alignment: .leading, spacing: 7) {
+                Text(title).font(.system(size: 16, weight: .semibold))
+                Text(detail).font(.system(size: 12)).foregroundStyle(Theme.muted).fixedSize(horizontal: false, vertical: true)
+            }
+        }.padding(20).frame(maxWidth: .infinity, alignment: .leading).background(Theme.card, in: RoundedRectangle(cornerRadius: 22))
     }
     private func finishAdding() {
         if let onEntryAdded { onEntryAdded() } else { dismiss() }
@@ -66,8 +90,8 @@ struct MealsView: View {
                 MacroSummary(nutrition: nutrition)
                 Text(portion).font(.caption2).foregroundStyle(Theme.muted)
             }
-            Spacer(); Image(systemName: "plus.circle.fill").foregroundStyle(Theme.cyan)
-        }.padding(.vertical, 4)
+            Spacer(); Image(systemName: "plus.circle.fill").foregroundStyle(Theme.lime)
+        }.padding(18).background(Theme.card, in: RoundedRectangle(cornerRadius: 22))
     }
 }
 

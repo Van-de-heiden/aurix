@@ -24,9 +24,9 @@ struct SettingsView: View {
             List {
                 Section {
                     HStack(spacing: 16) {
-                        Image("AppMark").resizable().frame(width: 54, height: 54).clipShape(RoundedRectangle(cornerRadius: 15))
+                        FuelMark().fill(Theme.lime).frame(width: 40, height: 40).padding(9).background(Theme.lime.opacity(0.08), in: RoundedRectangle(cornerRadius: 17))
                         VStack(alignment: .leading, spacing: 5) {
-                            Text(store.profile?.name ?? "AURIX").font(.title3.bold())
+                            Text(store.profile?.name ?? "DAYFUEL").font(.title3.bold())
                             Text(store.profile?.direction.title ?? "Dein Fortschritt").font(.subheadline).foregroundStyle(Theme.muted)
                         }
                     }.padding(.vertical, 8)
@@ -46,9 +46,9 @@ struct SettingsView: View {
                     } label: { Label("Produktcache leeren", systemImage: "arrow.clockwise") }
                     Text("Dein Tagebuch bleibt lokal und kann über die iPhone-Gerätesicherung gesichert werden. Eine lokale Rückfallkopie wird überschrieben. Produktcache: höchstens 200 Produkte, höchstens 30 Tage. Keine gespeicherten Meal-Fotos oder Audiodateien.").font(.footnote).foregroundStyle(Theme.muted)
                 }
-                Section("AURIX") {
-                    Text("Food fuels more than just today.").font(.system(size: 16, weight: .medium, design: .rounded))
-                    Text("Version 1.1 · Für deinen nächsten Gipfel.").font(.caption).foregroundStyle(Theme.muted)
+                Section("DAYFUEL") {
+                    Brand()
+                    Text("Version 2.0 · Fuel your everyday.").font(.caption).foregroundStyle(Theme.muted)
                     Link("Produktdaten: Open Food Facts · ODbL", destination: URL(string: "https://world.openfoodfacts.org/data")!)
                     Link("OpenAI: Umgang mit API-Daten", destination: URL(string: "https://developers.openai.com/api/docs/guides/your-data")!)
                 }
@@ -56,7 +56,7 @@ struct SettingsView: View {
                 .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Fertig") { dismiss() } } }
                 .sheet(isPresented: $ai) { AISettingsView() }
                 .sheet(isPresented: $goals) { GoalsEditor(profile: store.profile ?? UserProfile()) }
-                .fileExporter(isPresented: $exporting, document: document, contentType: .json, defaultFilename: "AURIX-Sicherung") { result in
+                .fileExporter(isPresented: $exporting, document: document, contentType: .json, defaultFilename: "DAYFUEL-Sicherung") { result in
                     if case .failure(let error) = result { status = error.localizedDescription }
                 }
                 .fileImporter(isPresented: $importing, allowedContentTypes: [.json]) { result in
@@ -69,7 +69,7 @@ struct SettingsView: View {
                         status = "Sicherung importiert. Fehlende Mahlzeiten und Messwerte wurden ergänzt; vorhandene Tagesmessungen und Ziele bleiben erhalten."
                     } catch { status = error.localizedDescription }
                 }
-                .alert("AURIX", isPresented: Binding(get: { status != nil }, set: { if !$0 { status = nil } })) {
+                .alert("DAYFUEL", isPresented: Binding(get: { status != nil }, set: { if !$0 { status = nil } })) {
                     Button("OK") { status = nil }
                 } message: { Text(status ?? "") }
         }.task { await BarcodeService.shared.maintenance() }
@@ -88,13 +88,13 @@ struct AISettingsView: View {
             Form {
                 Section {
                     VStack(alignment: .leading, spacing: 14) {
-                        Image(systemName: "sparkles").font(.system(size: 30)).foregroundStyle(Theme.cyan)
+                        Image(systemName: "sparkles").font(.system(size: 30)).foregroundStyle(Theme.lime)
                         Text("Einmal verbinden.\nEinfach erfassen.").font(.system(size: 26, weight: .medium, design: .rounded))
-                        Text("Für Foto- und Spracherfassung nutzt AURIX deinen eigenen OpenAI-Zugang.").font(.subheadline).foregroundStyle(Theme.muted)
+                        Text("Für Foto- und Spracherfassung nutzt DAYFUEL deinen eigenen OpenAI-Zugang.").font(.subheadline).foregroundStyle(Theme.muted)
                     }.padding(.vertical, 12)
                 }
                 Section("Dein privater Schlüssel") {
-                    if saved { Label("Schlüssel im iPhone-Schlüsselbund gespeichert", systemImage: "checkmark.shield").font(.subheadline).foregroundStyle(Theme.cyan) }
+                    if saved { Label("Schlüssel im iPhone-Schlüsselbund gespeichert", systemImage: "checkmark.shield").font(.subheadline).foregroundStyle(Theme.lime) }
                     SecureField(saved ? "Neuen Schlüssel einsetzen" : "OpenAI-API-Schlüssel einsetzen", text: $key)
                         .textInputAutocapitalization(.never).autocorrectionDisabled().privacySensitive().submitLabel(.done)
                     Text("Nur auf diesem iPhone. Der Schlüssel wird nicht mit deinem Tagebuch exportiert.").font(.caption).foregroundStyle(Theme.muted)

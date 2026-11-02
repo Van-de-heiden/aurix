@@ -14,6 +14,7 @@ final class SpeechRecorder: ObservableObject {
     private var task: SFSpeechRecognitionTask?
     private var timer: Task<Void, Never>?
     private var tapped = false
+    private var ownsAudioSession = false
     private var generation = UUID()
     var onTimedFinish: (() -> Void)?
 
@@ -33,6 +34,7 @@ final class SpeechRecorder: ObservableObject {
             let audio = AVAudioSession.sharedInstance()
             try audio.setCategory(.record, mode: .measurement, options: .duckOthers)
             try audio.setActive(true, options: .notifyOthersOnDeactivation)
+            ownsAudioSession = true
             let request = SFSpeechAudioBufferRecognitionRequest(); request.shouldReportPartialResults = true
             request.contextualStrings = ["Poulet", "Skyr", "Proteindrink", "Haferflocken", "Morgenessen", "Quark"]
             if recognizer.supportsOnDeviceRecognition { request.requiresOnDeviceRecognition = true }
@@ -75,7 +77,10 @@ final class SpeechRecorder: ObservableObject {
         if engine.isRunning { engine.stop() }
         if tapped { engine.inputNode.removeTap(onBus: 0); tapped = false }
         request?.endAudio(); recording = false
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        if ownsAudioSession {
+            try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+            ownsAudioSession = false
+        }
     }
     private enum RecorderError: Error { case noInput }
 }
